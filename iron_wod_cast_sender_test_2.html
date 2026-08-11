@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IRON WOD Cast Sender Test 2</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 24px;
+    }
+    .card {
+      background: #1b1b1b;
+      border-radius: 18px;
+      padding: 24px;
+    }
+    h1 { margin-top: 0; }
+    code {
+      background: #2a2a2a;
+      padding: 3px 7px;
+      border-radius: 6px;
+    }
+    button {
+      background: #ff6b00;
+      color: #111;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    button:disabled { opacity: .45; cursor: default; }
+    google-cast-launcher {
+      width: 56px;
+      height: 56px;
+      --connected-color: #ff6b00;
+      --disconnected-color: white;
+      display: block;
+      margin-top: 18px;
+    }
+    #status {
+      margin-top: 18px;
+      white-space: pre-wrap;
+      color: #ccc;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+  </style>
+  <script>
+    const APP_ID = '2A6B3276';
+    let ctx = null;
+
+    function log(msg) {
+      const el = document.getElementById('status');
+      el.textContent += '\n' + msg;
+    }
+
+    window.__onGCastApiAvailable = function(isAvailable) {
+      const status = document.getElementById('status');
+      if (!isAvailable) {
+        status.textContent = 'Google Cast Web Sender SDK NON disponibile.';
+        return;
+      }
+
+      ctx = cast.framework.CastContext.getInstance();
+      ctx.setOptions({
+        receiverApplicationId: APP_ID,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+      });
+
+      status.textContent =
+        'Cast SDK inizializzato.\nReceiver Application ID: ' + APP_ID +
+        '\nCast state iniziale: ' + ctx.getCastState();
+
+      ctx.addEventListener(
+        cast.framework.CastContextEventType.CAST_STATE_CHANGED,
+        function(event) {
+          log('Cast state: ' + event.castState);
+        }
+      );
+
+      ctx.addEventListener(
+        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+        function(event) {
+          log('Session state: ' + event.sessionState);
+        }
+      );
+
+      document.getElementById('manualCast').disabled = false;
+    };
+
+    async function requestCast() {
+      if (!ctx) {
+        log('CastContext non inizializzato.');
+        return;
+      }
+      log('requestSession()...');
+      try {
+        const result = await ctx.requestSession();
+        log('requestSession risultato: ' + String(result));
+      } catch (e) {
+        log('requestSession ERRORE: ' + (e && (e.code || e.message) ? (e.code || e.message) : String(e)));
+        console.error(e);
+      }
+    }
+  </script>
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+</head>
+<body>
+  <div class="card">
+    <h1>IRON WOD Cast Sender Test 2</h1>
+    <p>Receiver: <code>2A6B3276</code></p>
+
+    <p>
+      Il pulsante arancione resta sempre visibile e chiama direttamente
+      <code>CastContext.requestSession()</code>.
+    </p>
+
+    <button id="manualCast" onclick="requestCast()" disabled>
+      CERCA SHIELD CON 2A6B3276
+    </button>
+
+    <p style="color:#aaa; margin-top:22px;">
+      Sotto c'è anche il launcher ufficiale Google. Se non esistono receiver compatibili,
+      Google può nasconderlo automaticamente.
+    </p>
+    <google-cast-launcher></google-cast-launcher>
+
+    <div id="status">Caricamento Cast SDK…</div>
+  </div>
+</body>
+</html>
