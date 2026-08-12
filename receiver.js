@@ -51,32 +51,74 @@
     tone(1420, 240, 0.38, 350);
   }
 
-  function maybePlayCue(statusText, timerText) {
+  function speakCue(text, language) {
+    if (!('speechSynthesis' in window)) return false;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = language === 'en' ? 'en-US' : 'it-IT';
+      utterance.rate = 1.02;
+      utterance.volume = 1.0;
+      window.speechSynthesis.speak(utterance);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function maybePlayCue(statusText, timerText, audioMode, voiceLanguage) {
     const status = String(statusText || '').trim().toUpperCase();
     const prev = String(lastStatus || '').trim().toUpperCase();
     const timer = String(timerText || '').trim();
+    const mode = String(audioMode || 'SOUNDS').toUpperCase();
 
     const preparing = status.includes('PREPAR') || status.includes('GET READY');
-    if (preparing && timer !== lastTimer && /^(1|2|3|4|5)$/.test(timer)) {
+    if (
+      mode === 'SOUNDS' &&
+      preparing &&
+      timer !== lastTimer &&
+      /^(1|2|3|4|5)$/.test(timer)
+    ) {
       countdownCue();
     }
 
-    if (status !== prev) {
-      if (
+    if (status !== prev && mode !== 'SILENT') {
+      const isFinish =
         status.includes('FINE') ||
         status.includes('DONE') ||
         status.includes('COMPLET') ||
-        status.includes('TIME CAP')
-      ) {
-        finishCue();
+        status.includes('TIME UP') ||
+        status.includes('TEMPO TERMINATO');
+
+      if (isFinish) {
+        if (mode === 'VOICE') {
+          if (!speakCue(
+            voiceLanguage === 'en' ? 'Workout complete' : 'Allenamento finito',
+            voiceLanguage
+          )) finishCue();
+        } else {
+          finishCue();
+        }
       } else if (status.includes('REST')) {
-        restCue();
+        if (mode === 'VOICE') {
+          if (!speakCue('Rest', voiceLanguage)) restCue();
+        } else {
+          restCue();
+        }
       } else if (
         prev.includes('REST') ||
         prev.includes('PREPAR') ||
         prev.includes('GET READY')
       ) {
-        workCue();
+        if (mode === 'VOICE') {
+          const text =
+            prev.includes('PREPAR') || prev.includes('GET READY')
+              ? (voiceLanguage === 'en' ? 'Go' : 'Vai')
+              : 'Work';
+          if (!speakCue(text, voiceLanguage)) workCue();
+        } else {
+          workCue();
+        }
       }
     }
 
@@ -89,7 +131,12 @@
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
 
-    maybePlayCue(statusText, timerText);
+    maybePlayCue(
+      statusText,
+      timerText,
+      data.audioMode || 'SOUNDS',
+      data.voiceLanguage || 'it'
+    );
 
     statusEl.textContent = statusText;
     timerEl.textContent = timerText;
