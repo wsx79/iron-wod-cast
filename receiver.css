@@ -1,61 +1,55 @@
-:root {
-  --accent: #ff6d00;
-  --card-border: #555555;
-  --muted: #a5a5a5;
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
 }
-
 * { box-sizing: border-box; }
-html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
-body { font-family: Arial, Helvetica, sans-serif; color: #fff; }
-
-#stage {
+.timer-screen {
+  position: fixed;
+  inset: 0;
   width: 100vw;
   height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5vh 5vw;
   background: #000;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
 }
-
-.timer-card {
-  width: min(90vw, 1500px);
-  min-height: 72vh;
-  border: 3px solid var(--card-border);
-  border-radius: 34px;
-  background: #000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+.status, .timer, .footer {
+  position: absolute;
+  left: 1vw;
+  right: 1vw;
   text-align: center;
-  padding: 5vh 4vw;
-}
-
-.status {
-  color: var(--accent);
-  font-size: clamp(32px, 4.2vw, 74px);
   font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.time {
-  color: #fff;
-  font-size: clamp(150px, 23vw, 430px);
-  line-height: 0.95;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  margin: 4vh 0;
   white-space: nowrap;
+  overflow: hidden;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
 }
-
+.status {
+  top: 1.2vh;
+  color: #ff6b00;
+  font-size: clamp(54px, 7.4vh, 112px);
+  line-height: 1;
+  letter-spacing: 0.10em;
+}
+.timer {
+  top: 48%;
+  transform: translateY(-50%);
+  color: #fff;
+  font-size: clamp(190px, 31vw, 620px);
+  line-height: 0.84;
+  letter-spacing: -0.045em;
+}
 .footer {
-  color: var(--muted);
-  font-size: clamp(28px, 3.6vw, 62px);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  bottom: 4vh;
+  color: #aaa;
+  font-size: clamp(42px, 6.3vh, 96px);
+  line-height: 1;
+  letter-spacing: 0.055em;
 }
-
-.hidden { visibility: hidden; }
