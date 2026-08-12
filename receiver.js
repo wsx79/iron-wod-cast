@@ -120,6 +120,18 @@
     }
   }
 
+  function isActiveWorkStatus(status) {
+    return (
+      status === 'WORK' ||
+      status.startsWith('WORK ') ||
+      status === 'AMRAP' ||
+      status === 'COUNTDOWN' ||
+      status === 'COUNT UP' ||
+      status === 'FOR TIME' ||
+      status.startsWith('ROUND ')
+    );
+  }
+
   function maybePlayCue(statusText, timerText, audioMode, voiceLanguage) {
     const status = String(statusText || '').trim().toUpperCase();
     const prev = String(lastStatus || '').trim().toUpperCase();
@@ -127,11 +139,27 @@
     const mode = String(audioMode || 'SOUNDS').toUpperCase();
 
     const preparing = status.includes('PREPAR') || status.includes('GET READY');
-    const configuring =
+    const previousPreparing =
+      prev.includes('PREPAR') ||
+      prev.includes('GET READY');
+    const activeWork = isActiveWorkStatus(status);
+    const restStatus =
+      status.includes('REST') ||
+      status.includes('RECUPERO');
+    const configuringOrReady =
       status.includes('CONFIGURA') ||
-      status.includes('SET UP');
+      status.includes('SET UP') ||
+      status.includes('PRONTO') ||
+      status.includes('READY');
 
-    if (configuring) {
+    // RESET / READY / CONFIGURATION must be silent.
+    // More importantly: if we leave PREPARATI for anything that is NOT an
+    // actual running state (for example an intermediate PAUSA during reset),
+    // cancel the countdown voice and never infer Go/Vai from that transition.
+    if (
+      configuringOrReady ||
+      (previousPreparing && !preparing && !activeWork && !restStatus)
+    ) {
       stopVoiceAudio();
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -191,16 +219,9 @@
         } else {
           restCue();
         }
-      } else if (
-        prev.includes('REST') ||
-        prev.includes('PREPAR') ||
-        prev.includes('GET READY')
-      ) {
+      } else if (activeWork && (previousPreparing || prev.includes('REST'))) {
         if (mode === 'VOICE') {
-          const fromPreparation =
-            prev.includes('PREPAR') ||
-            prev.includes('GET READY');
-          const cueName = fromPreparation ? 'go' : 'work';
+          const cueName = previousPreparing ? 'go' : 'work';
           if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
         } else {
           workCue();
