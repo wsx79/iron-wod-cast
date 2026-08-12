@@ -10,29 +10,48 @@
   let lastTimer = '';
   let audioContext = null;
 
-  const countdownVoice = { it: {}, en: {} };
+  const voiceAudio = { it: {}, en: {} };
+  let activeVoiceAudio = null;
 
-  function preloadCountdownVoice() {
+  function preloadVoiceAudio() {
     ['it', 'en'].forEach(language => {
       for (let number = 1; number <= 10; number += 1) {
         const audio = new Audio(`voice/${language}/${number}.mp3`);
         audio.preload = 'auto';
-        countdownVoice[language][number] = audio;
+        voiceAudio[language][String(number)] = audio;
       }
+
+      ['go', 'work', 'rest', 'complete'].forEach(name => {
+        const audio = new Audio(`voice/${language}/${name}.mp3`);
+        audio.preload = 'auto';
+        voiceAudio[language][name] = audio;
+      });
     });
   }
 
-  function playCountdownVoice(numberText, language) {
-    const number = Number.parseInt(numberText, 10);
-    const lang = language === 'en' ? 'en' : 'it';
-    const template = countdownVoice[lang][number];
+  function stopVoiceAudio() {
+    if (activeVoiceAudio) {
+      try {
+        activeVoiceAudio.pause();
+        activeVoiceAudio.currentTime = 0;
+      } catch (_) {}
+      activeVoiceAudio = null;
+    }
+  }
 
+  function playVoiceAsset(name, language) {
+    const lang = language === 'en' ? 'en' : 'it';
+    const template = voiceAudio[lang][String(name)];
     if (!template) return false;
 
     try {
-      // Clone so a new second never stops/reuses the previous audio element.
+      stopVoiceAudio();
       const audio = template.cloneNode(true);
       audio.volume = 1.0;
+      activeVoiceAudio = audio;
+      audio.addEventListener('ended', () => {
+        if (activeVoiceAudio === audio) activeVoiceAudio = null;
+      }, { once: true });
       const result = audio.play();
       if (result && typeof result.catch === 'function') {
         result.catch(() => {});
@@ -108,6 +127,19 @@
     const mode = String(audioMode || 'SOUNDS').toUpperCase();
 
     const preparing = status.includes('PREPAR') || status.includes('GET READY');
+    const configuring =
+      status.includes('CONFIGURA') ||
+      status.includes('SET UP');
+
+    if (configuring) {
+      stopVoiceAudio();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      lastStatus = statusText || '';
+      lastTimer = timer;
+      return;
+    }
     if (
       mode === 'SOUNDS' &&
       preparing &&
@@ -134,8 +166,8 @@
       // Cast browsers can defer/skip very short speechSynthesis utterances
       // arriving once per second. The countdown therefore uses local,
       // preloaded MP3 numbers. speechSynthesis remains only as fallback.
-      if (!playCountdownVoice(timer, voiceLanguage)) {
-        speakCue(timer, voiceLanguage, false);
+      if (!playVoiceAsset(timer, voiceLanguage)) {
+        speakCue(timer, voiceLanguage, true);
       }
     }
 
@@ -149,16 +181,13 @@
 
       if (isFinish) {
         if (mode === 'VOICE') {
-          if (!speakCue(
-            voiceLanguage === 'en' ? 'Workout complete' : 'Allenamento finito',
-            voiceLanguage
-          )) finishCue();
+          if (!playVoiceAsset('complete', voiceLanguage)) finishCue();
         } else {
           finishCue();
         }
       } else if (status.includes('REST')) {
         if (mode === 'VOICE') {
-          if (!speakCue('Rest', voiceLanguage)) restCue();
+          if (!playVoiceAsset('rest', voiceLanguage)) restCue();
         } else {
           restCue();
         }
@@ -168,14 +197,11 @@
         prev.includes('GET READY')
       ) {
         if (mode === 'VOICE') {
-          const text =
-            prev.includes('PREPAR') || prev.includes('GET READY')
-              ? (voiceLanguage === 'en' ? 'Go' : 'Vai')
-              : 'Work';
           const fromPreparation =
             prev.includes('PREPAR') ||
             prev.includes('GET READY');
-          if (!speakCue(text, voiceLanguage, !fromPreparation)) workCue();
+          const cueName = fromPreparation ? 'go' : 'work';
+          if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
         } else {
           workCue();
         }
@@ -221,7 +247,7 @@
     lastTimer = '';
   }
 
-  preloadCountdownVoice();
+  preloadVoiceAudio();
 
   const context = cast.framework.CastReceiverContext.getInstance();
   context.addCustomMessageListener(NAMESPACE, event => {
