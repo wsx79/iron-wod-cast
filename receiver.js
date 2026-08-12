@@ -77,9 +77,18 @@
       mode === 'SOUNDS' &&
       preparing &&
       timer !== lastTimer &&
-      /^(1|2|3|4|5)$/.test(timer)
+      /^\d+$/.test(timer)
     ) {
       countdownCue();
+    }
+
+    if (
+      mode === 'VOICE' &&
+      preparing &&
+      timer !== lastTimer &&
+      /^\d+$/.test(timer)
+    ) {
+      speakCue(timer, voiceLanguage);
     }
 
     if (status !== prev && mode !== 'SILENT') {
