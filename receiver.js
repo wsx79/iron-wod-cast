@@ -94,7 +94,15 @@
     statusEl.textContent = statusText;
     timerEl.textContent = timerText;
     footerEl.textContent = footerText;
-    if (data.accentColor) statusEl.style.color = String(data.accentColor);
+
+    const normalizedStatus = statusText.trim().toUpperCase();
+    const isConfiguration =
+      normalizedStatus.includes('CONFIGURA') ||
+      normalizedStatus.includes('SET UP');
+
+    statusEl.style.color = isConfiguration
+      ? '#ff6b00'
+      : (data.accentColor ? String(data.accentColor) : '#ff6b00');
   }
 
   function clearTimer() {

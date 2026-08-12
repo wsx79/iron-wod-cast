@@ -34,7 +34,7 @@ html, body {
 .status {
   top: 1.2vh;
   color: #ff6b00;
-  font-size: clamp(54px, 7.4vh, 112px);
+  font-size: clamp(58px, 8.0vh, 122px);
   line-height: 1;
   letter-spacing: 0.10em;
 }
@@ -42,14 +42,14 @@ html, body {
   top: 48%;
   transform: translateY(-50%);
   color: #fff;
-  font-size: clamp(190px, 31vw, 620px);
+  font-size: clamp(220px, 36vw, 720px);
   line-height: 0.84;
   letter-spacing: -0.045em;
 }
 .footer {
   bottom: 4vh;
   color: #aaa;
-  font-size: clamp(42px, 6.3vh, 96px);
+  font-size: clamp(46px, 6.8vh, 104px);
   line-height: 1;
   letter-spacing: 0.055em;
 }
