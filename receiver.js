@@ -10,6 +10,39 @@
   let lastTimer = '';
   let audioContext = null;
 
+  const countdownVoice = { it: {}, en: {} };
+
+  function preloadCountdownVoice() {
+    ['it', 'en'].forEach(language => {
+      for (let number = 1; number <= 10; number += 1) {
+        const audio = new Audio(`voice/${language}/${number}.mp3`);
+        audio.preload = 'auto';
+        countdownVoice[language][number] = audio;
+      }
+    });
+  }
+
+  function playCountdownVoice(numberText, language) {
+    const number = Number.parseInt(numberText, 10);
+    const lang = language === 'en' ? 'en' : 'it';
+    const template = countdownVoice[lang][number];
+
+    if (!template) return false;
+
+    try {
+      // Clone so a new second never stops/reuses the previous audio element.
+      const audio = template.cloneNode(true);
+      audio.volume = 1.0;
+      const result = audio.play();
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => {});
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function ensureAudio() {
     if (!audioContext) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -94,13 +127,16 @@
         prev.includes('PREPAR') ||
         prev.includes('GET READY');
 
-      // Clear only stale speech when a new countdown begins.
-      // Do NOT cancel on every second: otherwise each number gets killed by
-      // the next update and the TV only manages to say Go/Vai at the end.
       if (!wasPreparing && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
-      speakCue(timer, voiceLanguage, false);
+
+      // Cast browsers can defer/skip very short speechSynthesis utterances
+      // arriving once per second. The countdown therefore uses local,
+      // preloaded MP3 numbers. speechSynthesis remains only as fallback.
+      if (!playCountdownVoice(timer, voiceLanguage)) {
+        speakCue(timer, voiceLanguage, false);
+      }
     }
 
     if (status !== prev && mode !== 'SILENT') {
@@ -184,6 +220,8 @@
     lastStatus = '';
     lastTimer = '';
   }
+
+  preloadCountdownVoice();
 
   const context = cast.framework.CastReceiverContext.getInstance();
   context.addCustomMessageListener(NAMESPACE, event => {
