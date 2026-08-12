@@ -51,13 +51,15 @@
     tone(1420, 240, 0.38, 350);
   }
 
-  function speakCue(text, language) {
+  function speakCue(text, language, cancelPrevious = true) {
     if (!('speechSynthesis' in window)) return false;
     try {
-      window.speechSynthesis.cancel();
+      if (cancelPrevious) {
+        window.speechSynthesis.cancel();
+      }
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = language === 'en' ? 'en-US' : 'it-IT';
-      utterance.rate = 1.02;
+      utterance.rate = 1.35;
       utterance.volume = 1.0;
       window.speechSynthesis.speak(utterance);
       return true;
@@ -88,7 +90,17 @@
       timer !== lastTimer &&
       /^\d+$/.test(timer)
     ) {
-      speakCue(timer, voiceLanguage);
+      const wasPreparing =
+        prev.includes('PREPAR') ||
+        prev.includes('GET READY');
+
+      // Clear only stale speech when a new countdown begins.
+      // Do NOT cancel on every second: otherwise each number gets killed by
+      // the next update and the TV only manages to say Go/Vai at the end.
+      if (!wasPreparing && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      speakCue(timer, voiceLanguage, false);
     }
 
     if (status !== prev && mode !== 'SILENT') {
@@ -124,7 +136,10 @@
             prev.includes('PREPAR') || prev.includes('GET READY')
               ? (voiceLanguage === 'en' ? 'Go' : 'Vai')
               : 'Work';
-          if (!speakCue(text, voiceLanguage)) workCue();
+          const fromPreparation =
+            prev.includes('PREPAR') ||
+            prev.includes('GET READY');
+          if (!speakCue(text, voiceLanguage, !fromPreparation)) workCue();
         } else {
           workCue();
         }
