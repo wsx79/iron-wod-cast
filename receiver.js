@@ -11,10 +11,18 @@
 
   function showTimer(data) {
     if (!data || data.type !== 'timer') return;
-    status.textContent = data.statusBaseText || data.statusText || 'IRON WOD';
+    const rawStatus = data.statusText || '';
+    const legacyParts = rawStatus.split('•').map(part => part.trim());
+    const legacyTimeCap = legacyParts.length > 1 && legacyParts[1].toUpperCase().startsWith('TIME CAP')
+      ? legacyParts.slice(1).join(' • ')
+      : '';
+    const baseStatus = data.statusBaseText || (legacyTimeCap ? legacyParts[0] : rawStatus) || 'IRON WOD';
+    const resolvedTimeCap = data.timeCapText || legacyTimeCap;
+
+    status.textContent = baseStatus;
     time.textContent = data.timerText || '00:00';
-    timeCap.textContent = data.timeCapText || '';
-    timeCap.classList.toggle('hidden', !data.timeCapText);
+    timeCap.textContent = resolvedTimeCap;
+    timeCap.classList.toggle('hidden', !resolvedTimeCap);
     footer.textContent = data.footerText || 'TIMER';
     document.documentElement.style.setProperty('--accent', data.accentColor || '#ff6d00');
     card.classList.remove('hidden');
