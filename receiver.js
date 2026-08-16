@@ -11,7 +11,7 @@
 
   function showTimer(data) {
     if (!data || data.type !== 'timer') return;
-    status.textContent = data.statusText || 'IRON WOD';
+    status.textContent = data.statusBaseText || data.statusText || 'IRON WOD';
     time.textContent = data.timerText || '00:00';
     timeCap.textContent = data.timeCapText || '';
     timeCap.classList.toggle('hidden', !data.timeCapText);
