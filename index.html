@@ -1,18 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IRON WOD Timer</title>
-  <link rel="stylesheet" href="receiver.css">
-  <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <link rel="stylesheet" href="receiver.css" />
 </head>
 <body>
-  <main class="timer-screen">
-    <div id="statusText" class="status">IRON WOD</div>
-    <div id="timerText" class="timer">00:00</div>
-    <div id="footerText" class="footer">TIMER</div>
+  <main id="stage" aria-label="IRON WOD timer">
+    <section id="timer-card" class="timer-card">
+      <div class="top-row">
+        <div id="status" class="status">IRON WOD</div>
+        <div id="time-cap" class="time-cap hidden"></div>
+      </div>
+      <div id="time" class="time">00:00</div>
+      <div id="footer" class="footer">TIMER</div>
+    </section>
   </main>
+
+  <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
   <script src="receiver.js"></script>
 </body>
 </html>

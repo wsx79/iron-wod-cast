@@ -1,55 +1,78 @@
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: #000;
-  color: #fff;
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  --accent: #ff6d00;
+  --card-border: #555555;
+  --muted: #a5a5a5;
 }
+
 * { box-sizing: border-box; }
-.timer-screen {
-  position: fixed;
-  inset: 0;
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
+body { font-family: Arial, Helvetica, sans-serif; color: #fff; }
+
+#stage {
   width: 100vw;
   height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5vh 5vw;
   background: #000;
-  border: 0;
-  outline: 0;
-  box-shadow: none;
 }
-.status, .timer, .footer {
-  position: absolute;
-  left: 1vw;
-  right: 1vw;
+
+.timer-card {
+  width: min(90vw, 1500px);
+  min-height: 72vh;
+  border: 3px solid var(--card-border);
+  border-radius: 34px;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  font-weight: 900;
-  white-space: nowrap;
-  overflow: hidden;
-  border: 0;
-  outline: 0;
-  box-shadow: none;
+  padding: 5vh 4vw;
 }
+
 .status {
-  top: 1.2vh;
-  color: #ff6b00;
-  font-size: clamp(62px, 8.6vh, 132px);
-  line-height: 1;
-  letter-spacing: 0.10em;
+  color: var(--accent);
+  font-size: clamp(32px, 4.2vw, 74px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
-.timer {
-  top: 48%;
-  transform: translateY(-50%);
+
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 2vw, 42px);
+  max-width: 96%;
+  white-space: nowrap;
+}
+
+.time-cap {
+  color: #ff7a00;
+  font-size: clamp(26px, 3.2vw, 58px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.time {
   color: #fff;
-  font-size: clamp(235px, 38vw, 760px);
-  line-height: 0.84;
-  letter-spacing: -0.045em;
+  font-size: clamp(150px, 23vw, 430px);
+  line-height: 0.95;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  margin: 4vh 0;
+  white-space: nowrap;
 }
+
 .footer {
-  bottom: 4vh;
-  color: #aaa;
-  font-size: clamp(49px, 7.2vh, 112px);
-  line-height: 1;
-  letter-spacing: 0.055em;
+  color: var(--muted);
+  font-size: clamp(28px, 3.6vw, 62px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
+
+.hidden { visibility: hidden; }
