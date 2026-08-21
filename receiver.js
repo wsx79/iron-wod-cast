@@ -69,9 +69,22 @@
       }, { once: true });
 
       const result = audio.play();
+
       if (result && typeof result.catch === 'function') {
-        result.catch(() => {});
+        result.catch(() => {
+          if (activeVoiceAudio === audio) {
+            activeVoiceAudio = null;
+          }
+
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+          } catch (_) {}
+
+          speakCue(String(name), language, true);
+        });
       }
+
       return true;
     } catch (_) {
       return false;
