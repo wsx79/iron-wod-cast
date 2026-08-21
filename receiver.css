@@ -90,6 +90,7 @@ html, body {
 .footer .footer-part {
   display: inline;
   font: inherit;
+  font-size: 0.96em;
   line-height: inherit;
   letter-spacing: inherit;
 }
