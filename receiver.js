@@ -14,10 +14,15 @@
   const voicePlayer = new Audio();
   voicePlayer.preload = 'none';
   voicePlayer.volume = 1.0;
+
+  const soundPlayer = new Audio();
+  soundPlayer.preload = 'auto';
+  soundPlayer.volume = 1.0;
   let activeVoiceAudio = null;
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
-  const AUDIO_ASSET_VERSION = '20260821-stable-audio2';
+  const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
+  const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
   function normalizeLanguage(language) {
     const raw = String(language || '').trim().toLowerCase();
@@ -40,6 +45,35 @@
       `voice/${lang}/${safeName}.mp3?v=${AUDIO_ASSET_VERSION}`,
       window.location.href
     ).href;
+  }
+
+  function soundUrl(name) {
+    const safeName = String(name).replace(/[^a-z0-9_-]/gi, '');
+    return new URL(
+      `sounds/${safeName}.mp3?v=${SOUND_ASSET_VERSION}`,
+      window.location.href
+    ).href;
+  }
+
+  function prefetchAsset(url) {
+    try {
+      fetch(url, { cache: 'force-cache' }).catch(() => {});
+    } catch (_) {}
+  }
+
+  function prewarmAudioAssets() {
+    ['countdown', 'work', 'rest', 'complete'].forEach(name => {
+      prefetchAsset(soundUrl(name));
+    });
+
+    ['it', 'en', 'es'].forEach(language => {
+      for (let number = 1; number <= 10; number += 1) {
+        prefetchAsset(voiceUrl(String(number), language));
+      }
+      ['go', 'work', 'rest', 'complete'].forEach(name => {
+        prefetchAsset(voiceUrl(name, language));
+      });
+    });
   }
 
   function localizedFallbackText(name, language) {
@@ -104,6 +138,31 @@
     }
   }
 
+  function stopSoundAudio() {
+    try {
+      soundPlayer.pause();
+      soundPlayer.currentTime = 0;
+    } catch (_) {}
+  }
+
+  function playSoundAsset(name) {
+    try {
+      stopSoundAudio();
+      soundPlayer.src = soundUrl(name);
+      soundPlayer.currentTime = 0;
+      soundPlayer.volume = 1.0;
+      soundPlayer.load();
+
+      const result = soundPlayer.play();
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => {});
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function ensureAudio() {
     if (!audioContext) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -143,18 +202,15 @@
     scheduleTone(ctx, frequency, durationMs, gainValue, delayMs);
   }
 
-  const countdownCue = () => tone(920, 120, 0.34);
-  const restCue = () => tone(650, 190, 0.34);
+  const countdownCue = () => playSoundAsset('countdown');
+  const restCue = () => playSoundAsset('rest');
 
   function workCue() {
-    tone(1180, 140, 0.36);
-    tone(1480, 150, 0.34, 150);
+    playSoundAsset('work');
   }
 
   function finishCue() {
-    tone(880, 150, 0.34);
-    tone(1120, 170, 0.36, 165);
-    tone(1420, 240, 0.38, 350);
+    playSoundAsset('complete');
   }
 
 
@@ -242,6 +298,7 @@
 
     if (mode !== lastAudioMode || normalizedLanguage !== lastVoiceLanguage) {
       stopVoiceAudio();
+      stopSoundAudio();
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       lastStatus = '';
       lastTimer = '';
@@ -265,6 +322,7 @@
       (previousPreparing && !preparing && !activeWork && !restStatus)
     ) {
       stopVoiceAudio();
+      stopSoundAudio();
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       lastStatus = statusText || '';
       lastTimer = timer;
@@ -433,6 +491,7 @@
     timeCapEl.classList.add('hidden');
     statusEl.style.color = '#ff6b00';
     stopVoiceAudio();
+    stopSoundAudio();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     lastStatus = '';
     lastTimer = '';
@@ -440,6 +499,8 @@
     lastVoiceLanguage = '';
   }
 
+
+  prewarmAudioAssets();
 
   const context = cast.framework.CastReceiverContext.getInstance();
   context.addCustomMessageListener(NAMESPACE, event => {
