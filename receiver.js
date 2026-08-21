@@ -11,8 +11,13 @@
   let lastTimer = '';
   let audioContext = null;
 
-  const voiceAudio = { it: {}, en: {}, es: {} };
+  const voicePlayer = new Audio();
+  voicePlayer.preload = 'none';
+  voicePlayer.volume = 1.0;
   let activeVoiceAudio = null;
+  let lastAudioMode = '';
+  let lastVoiceLanguage = '';
+  const AUDIO_ASSET_VERSION = '20260821-stable-audio2';
 
   function normalizeLanguage(language) {
     const raw = String(language || '').trim().toLowerCase();
@@ -28,66 +33,74 @@
       .replace(/[\u0300-\u036f]/g, '');
   }
 
-  function preloadVoiceAudio() {
-    ['it', 'en', 'es'].forEach(language => {
-      for (let number = 1; number <= 10; number += 1) {
-        const audio = new Audio(`voice/${language}/${number}.mp3`);
-        audio.preload = 'auto';
-        voiceAudio[language][String(number)] = audio;
-      }
+  function voiceUrl(name, language) {
+    const lang = normalizeLanguage(language);
+    const safeName = String(name).replace(/[^a-z0-9_-]/gi, '');
+    return new URL(
+      `voice/${lang}/${safeName}.mp3?v=${AUDIO_ASSET_VERSION}`,
+      window.location.href
+    ).href;
+  }
 
-      ['go', 'work', 'rest', 'complete'].forEach(name => {
-        const audio = new Audio(`voice/${language}/${name}.mp3`);
-        audio.preload = 'auto';
-        voiceAudio[language][name] = audio;
-      });
-    });
+  function localizedFallbackText(name, language) {
+    const lang = normalizeLanguage(language);
+    const cue = String(name);
+
+    if (/^\d+$/.test(cue)) return cue;
+
+    const words = {
+      it: { go: 'via', work: 'lavoro', rest: 'riposo', complete: 'completato' },
+      en: { go: 'go', work: 'work', rest: 'rest', complete: 'complete' },
+      es: { go: 'vamos', work: 'trabajo', rest: 'descanso', complete: 'completado' }
+    };
+
+    return words[lang][cue] || cue;
   }
 
   function stopVoiceAudio() {
-    if (activeVoiceAudio) {
-      try {
-        activeVoiceAudio.pause();
-        activeVoiceAudio.currentTime = 0;
-      } catch (_) {}
-      activeVoiceAudio = null;
-    }
+    try {
+      voicePlayer.pause();
+      voicePlayer.removeAttribute('src');
+      voicePlayer.load();
+    } catch (_) {}
+    activeVoiceAudio = null;
   }
 
   function playVoiceAsset(name, language) {
-    const lang = normalizeLanguage(language);
-    const template = voiceAudio[lang][String(name)];
-    if (!template) return false;
-
     try {
       stopVoiceAudio();
-      const audio = template.cloneNode(true);
-      audio.volume = 1.0;
-      activeVoiceAudio = audio;
-      audio.addEventListener('ended', () => {
-        if (activeVoiceAudio === audio) activeVoiceAudio = null;
-      }, { once: true });
 
-      const result = audio.play();
+      voicePlayer.src = voiceUrl(name, language);
+      voicePlayer.currentTime = 0;
+      voicePlayer.volume = 1.0;
+      activeVoiceAudio = voicePlayer;
+
+      voicePlayer.onended = () => {
+        activeVoiceAudio = null;
+      };
+
+      voicePlayer.onerror = () => {
+        if (activeVoiceAudio === voicePlayer) activeVoiceAudio = null;
+        const spoken = speakCue(localizedFallbackText(name, language), language, true);
+        if (!spoken) fallbackSoundForCue(name);
+      };
+
+      voicePlayer.load();
+      const result = voicePlayer.play();
 
       if (result && typeof result.catch === 'function') {
         result.catch(() => {
-          if (activeVoiceAudio === audio) {
-            activeVoiceAudio = null;
-          }
-
-          try {
-            audio.pause();
-            audio.currentTime = 0;
-          } catch (_) {}
-
-          speakCue(String(name), language, true);
+          if (activeVoiceAudio === voicePlayer) activeVoiceAudio = null;
+          const spoken = speakCue(localizedFallbackText(name, language), language, true);
+          if (!spoken) fallbackSoundForCue(name);
         });
       }
 
       return true;
     } catch (_) {
-      return false;
+      const spoken = speakCue(localizedFallbackText(name, language), language, true);
+      if (!spoken) fallbackSoundForCue(name);
+      return spoken;
     }
   }
 
@@ -96,16 +109,10 @@
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (AudioContextClass) audioContext = new AudioContextClass();
     }
-    if (audioContext && audioContext.state === 'suspended') {
-      audioContext.resume().catch(() => {});
-    }
     return audioContext;
   }
 
-  function tone(frequency, durationMs, gainValue, delayMs = 0) {
-    const ctx = ensureAudio();
-    if (!ctx) return;
-
+  function scheduleTone(ctx, frequency, durationMs, gainValue, delayMs = 0) {
     const startAt = ctx.currentTime + delayMs / 1000;
     const endAt = startAt + durationMs / 1000;
     const osc = ctx.createOscillator();
@@ -122,6 +129,20 @@
     osc.stop(endAt + 0.02);
   }
 
+  function tone(frequency, durationMs, gainValue, delayMs = 0) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+
+    if (ctx.state === 'suspended') {
+      ctx.resume()
+        .then(() => scheduleTone(ctx, frequency, durationMs, gainValue, delayMs))
+        .catch(() => {});
+      return;
+    }
+
+    scheduleTone(ctx, frequency, durationMs, gainValue, delayMs);
+  }
+
   const countdownCue = () => tone(920, 120, 0.34);
   const restCue = () => tone(650, 190, 0.34);
 
@@ -134,6 +155,20 @@
     tone(880, 150, 0.34);
     tone(1120, 170, 0.36, 165);
     tone(1420, 240, 0.38, 350);
+  }
+
+
+  function fallbackSoundForCue(name) {
+    const cue = String(name);
+    if (/^\d+$/.test(cue)) {
+      countdownCue();
+    } else if (cue === 'rest') {
+      restCue();
+    } else if (cue === 'complete') {
+      finishCue();
+    } else {
+      workCue();
+    }
   }
 
   function speakCue(text, language, cancelPrevious = true) {
@@ -203,6 +238,16 @@
     const prev = normalizeStatus(lastStatus);
     const timer = String(timerText || '').trim();
     const mode = String(audioMode || 'SOUNDS').trim().toUpperCase();
+    const normalizedLanguage = normalizeLanguage(voiceLanguage);
+
+    if (mode !== lastAudioMode || normalizedLanguage !== lastVoiceLanguage) {
+      stopVoiceAudio();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      lastStatus = '';
+      lastTimer = '';
+      lastAudioMode = mode;
+      lastVoiceLanguage = normalizedLanguage;
+    }
 
     const preparing = isPreparingStatus(status);
     const previousPreparing = isPreparingStatus(prev);
@@ -391,9 +436,10 @@
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     lastStatus = '';
     lastTimer = '';
+    lastAudioMode = '';
+    lastVoiceLanguage = '';
   }
 
-  preloadVoiceAudio();
 
   const context = cast.framework.CastReceiverContext.getInstance();
   context.addCustomMessageListener(NAMESPACE, event => {
