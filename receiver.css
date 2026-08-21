@@ -90,7 +90,6 @@ html, body {
 .footer .footer-part {
   display: inline;
   font: inherit;
-  font-size: 0.93em;
   line-height: inherit;
   letter-spacing: inherit;
 }
@@ -109,4 +108,17 @@ html, body {
 
 .footer .footer-block {
   color: #ff6b00;
+}
+
+
+/* ROUND moves beside WORK/status, while keeping the original top-line geometry. */
+.status .status-main {
+  color: inherit;
+}
+
+.status .status-round {
+  color: #2196f3;
+  font-size: 0.72em;
+  letter-spacing: 0.055em;
+  vertical-align: 0.08em;
 }

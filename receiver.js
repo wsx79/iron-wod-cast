@@ -11,72 +11,9 @@
   let lastTimer = '';
   let audioContext = null;
 
-  const voiceAudio = { it: {}, en: {}, es: {} };
-  let activeVoiceAudio = null;
-
-  function normalizeLanguage(language) {
-    const raw = String(language || '').trim().toLowerCase();
-    const primary = raw.split(/[-_]/)[0];
-    return ['it', 'en', 'es'].includes(primary) ? primary : 'en';
-  }
-
-  function normalizeStatus(value) {
-    return String(value || '')
-      .trim()
-      .toUpperCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-  }
-
-  function preloadVoiceAudio() {
-    ['it', 'en', 'es'].forEach(language => {
-      for (let number = 1; number <= 10; number += 1) {
-        const audio = new Audio(`voice/${language}/${number}.mp3`);
-        audio.preload = 'auto';
-        voiceAudio[language][String(number)] = audio;
-      }
-
-      ['go', 'work', 'rest', 'complete'].forEach(name => {
-        const audio = new Audio(`voice/${language}/${name}.mp3`);
-        audio.preload = 'auto';
-        voiceAudio[language][name] = audio;
-      });
-    });
-  }
-
-  function stopVoiceAudio() {
-    if (activeVoiceAudio) {
-      try {
-        activeVoiceAudio.pause();
-        activeVoiceAudio.currentTime = 0;
-      } catch (_) {}
-      activeVoiceAudio = null;
-    }
-  }
-
-  function playVoiceAsset(name, language) {
-    const lang = normalizeLanguage(language);
-    const template = voiceAudio[lang][String(name)];
-    if (!template) return false;
-
-    try {
-      stopVoiceAudio();
-      const audio = template.cloneNode(true);
-      audio.volume = 1.0;
-      activeVoiceAudio = audio;
-      audio.addEventListener('ended', () => {
-        if (activeVoiceAudio === audio) activeVoiceAudio = null;
-      }, { once: true });
-
-      const result = audio.play();
-      if (result && typeof result.catch === 'function') {
-        result.catch(() => {});
-      }
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
+  const voiceBuffers = { it: {}, en: {}, es: {} };
+  const voiceLoadPromises = {};
+  let activeVoiceSource = null;
 
   function ensureAudio() {
     if (!audioContext) {
@@ -87,6 +24,83 @@
       audioContext.resume().catch(() => {});
     }
     return audioContext;
+  }
+
+  function voiceAssetUrl(name, language) {
+    const lang = normalizeLanguage(language);
+    return `voice/${lang}/${name}.mp3`;
+  }
+
+  function loadVoiceBuffer(name, language) {
+    const lang = normalizeLanguage(language);
+    const key = `${lang}:${name}`;
+
+    if (voiceBuffers[lang][String(name)]) {
+      return Promise.resolve(voiceBuffers[lang][String(name)]);
+    }
+
+    if (voiceLoadPromises[key]) return voiceLoadPromises[key];
+
+    const ctx = ensureAudio();
+    if (!ctx) return Promise.resolve(null);
+
+    voiceLoadPromises[key] = fetch(voiceAssetUrl(name, lang), { cache: 'force-cache' })
+      .then(response => {
+        if (!response.ok) throw new Error(`Voice HTTP ${response.status}`);
+        return response.arrayBuffer();
+      })
+      .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
+      .then(buffer => {
+        voiceBuffers[lang][String(name)] = buffer;
+        return buffer;
+      })
+      .catch(() => null);
+
+    return voiceLoadPromises[key];
+  }
+
+  function preloadVoiceAudio() {
+    ['it', 'en', 'es'].forEach(language => {
+      for (let number = 1; number <= 10; number += 1) {
+        loadVoiceBuffer(String(number), language);
+      }
+      ['go', 'work', 'rest', 'complete'].forEach(name => {
+        loadVoiceBuffer(name, language);
+      });
+    });
+  }
+
+  function stopVoiceAudio() {
+    if (activeVoiceSource) {
+      try { activeVoiceSource.stop(); } catch (_) {}
+      activeVoiceSource = null;
+    }
+  }
+
+  async function playVoiceAsset(name, language) {
+    const ctx = ensureAudio();
+    if (!ctx) return false;
+
+    const buffer = await loadVoiceBuffer(name, language);
+    if (!buffer) return false;
+
+    try {
+      stopVoiceAudio();
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      gain.gain.value = 1.0;
+      source.buffer = buffer;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      source.onended = () => {
+        if (activeVoiceSource === source) activeVoiceSource = null;
+      };
+      activeVoiceSource = source;
+      source.start(0);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function tone(frequency, durationMs, gainValue, delayMs = 0) {
@@ -232,28 +246,34 @@
         window.speechSynthesis.cancel();
       }
 
-      if (!playVoiceAsset(timer, voiceLanguage)) {
-        speakCue(timer, voiceLanguage, true);
-      }
+      playVoiceAsset(timer, voiceLanguage).then(played => {
+        if (!played && !speakCue(timer, voiceLanguage, true)) countdownCue();
+      });
     }
 
     if (status !== prev && mode !== 'SILENT') {
       if (isFinishStatus(status)) {
         if (mode === 'VOICE') {
-          if (!playVoiceAsset('complete', voiceLanguage)) finishCue();
+          playVoiceAsset('complete', voiceLanguage).then(played => {
+            if (!played) finishCue();
+          });
         } else {
           finishCue();
         }
       } else if (restStatus) {
         if (mode === 'VOICE') {
-          if (!playVoiceAsset('rest', voiceLanguage)) restCue();
+          playVoiceAsset('rest', voiceLanguage).then(played => {
+            if (!played) restCue();
+          });
         } else {
           restCue();
         }
       } else if (activeWork && (previousPreparing || isRestStatus(prev))) {
         if (mode === 'VOICE') {
           const cueName = previousPreparing ? 'go' : 'work';
-          if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
+          playVoiceAsset(cueName, voiceLanguage).then(played => {
+            if (!played) workCue();
+          });
         } else {
           workCue();
         }
@@ -307,18 +327,45 @@
     return 'footer-mode';
   }
 
-  function renderFooter(footerText) {
+  function splitFooter(footerText) {
     const raw = String(footerText || '').trim();
-
-    if (!raw || !raw.includes('•')) {
-      footerEl.textContent = raw || 'TIMER';
-      return;
-    }
+    if (!raw) return { roundText: '', footerParts: [] };
 
     const parts = raw
       .split('•')
       .map(part => part.trim())
       .filter(Boolean);
+
+    const roundIndex = parts.findIndex(part => classifyFooterPart(part) === 'footer-round');
+    const roundText = roundIndex >= 0 ? parts[roundIndex] : '';
+
+    return {
+      roundText,
+      footerParts: parts.filter((_, index) => index !== roundIndex)
+    };
+  }
+
+  function renderStatus(statusText, roundText) {
+    statusEl.textContent = '';
+
+    const main = document.createElement('span');
+    main.className = 'status-main';
+    main.textContent = statusText;
+    statusEl.appendChild(main);
+
+    if (roundText) {
+      const round = document.createElement('span');
+      round.className = 'status-round';
+      round.textContent = `  ${roundText}`;
+      statusEl.appendChild(round);
+    }
+  }
+
+  function renderFooterParts(parts) {
+    if (!parts.length) {
+      footerEl.textContent = 'TIMER';
+      return;
+    }
 
     footerEl.textContent = '';
 
@@ -342,6 +389,7 @@
     const statusText = resolved.statusText;
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
+    const structuredFooter = splitFooter(footerText);
 
     maybePlayCue(
       statusText,
@@ -350,9 +398,9 @@
       data.voiceLanguage || 'it'
     );
 
-    statusEl.textContent = statusText;
+    renderStatus(statusText, structuredFooter.roundText);
     timerEl.textContent = timerText;
-    renderFooter(footerText);
+    renderFooterParts(structuredFooter.footerParts);
 
     timeCapEl.textContent = resolved.timeCapText;
     timeCapEl.classList.toggle('hidden', !resolved.timeCapText);
