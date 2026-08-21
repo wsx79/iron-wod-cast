@@ -14,6 +14,20 @@
   const voiceAudio = { it: {}, en: {}, es: {} };
   let activeVoiceAudio = null;
 
+  function normalizeLanguage(language) {
+    const raw = String(language || '').trim().toLowerCase();
+    const primary = raw.split(/[-_]/)[0];
+    return ['it', 'en', 'es'].includes(primary) ? primary : 'en';
+  }
+
+  function normalizeStatus(value) {
+    return String(value || '')
+      .trim()
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
   function preloadVoiceAudio() {
     ['it', 'en', 'es'].forEach(language => {
       for (let number = 1; number <= 10; number += 1) {
@@ -41,7 +55,7 @@
   }
 
   function playVoiceAsset(name, language) {
-    const lang = language === 'es' ? 'es' : (language === 'en' ? 'en' : 'it');
+    const lang = normalizeLanguage(language);
     const template = voiceAudio[lang][String(name)];
     if (!template) return false;
 
@@ -53,6 +67,7 @@
       audio.addEventListener('ended', () => {
         if (activeVoiceAudio === audio) activeVoiceAudio = null;
       }, { once: true });
+
       const result = audio.play();
       if (result && typeof result.catch === 'function') {
         result.catch(() => {});
@@ -77,10 +92,12 @@
   function tone(frequency, durationMs, gainValue, delayMs = 0) {
     const ctx = ensureAudio();
     if (!ctx) return;
+
     const startAt = ctx.currentTime + delayMs / 1000;
     const endAt = startAt + durationMs / 1000;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+
     osc.type = 'sine';
     osc.frequency.setValueAtTime(frequency, startAt);
     gain.gain.setValueAtTime(0.0001, startAt);
@@ -94,10 +111,12 @@
 
   const countdownCue = () => tone(920, 120, 0.34);
   const restCue = () => tone(650, 190, 0.34);
+
   function workCue() {
     tone(1180, 140, 0.36);
     tone(1480, 150, 0.34, 150);
   }
+
   function finishCue() {
     tone(880, 150, 0.34);
     tone(1120, 170, 0.36, 165);
@@ -106,12 +125,13 @@
 
   function speakCue(text, language, cancelPrevious = true) {
     if (!('speechSynthesis' in window)) return false;
+
     try {
-      if (cancelPrevious) {
-        window.speechSynthesis.cancel();
-      }
+      if (cancelPrevious) window.speechSynthesis.cancel();
+
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = language === 'es' ? 'es-ES' : (language === 'en' ? 'en-US' : 'it-IT');
+      const lang = normalizeLanguage(language);
+      utterance.lang = lang === 'it' ? 'it-IT' : (lang === 'es' ? 'es-ES' : 'en-US');
       utterance.rate = 1.35;
       utterance.volume = 1.0;
       window.speechSynthesis.speak(utterance);
@@ -121,54 +141,78 @@
     }
   }
 
+  function isPreparingStatus(status) {
+    const text = normalizeStatus(status);
+    return text.includes('PREPAR') ||
+      text.includes('GET READY') ||
+      text === 'PREP';
+  }
+
+  function isRestStatus(status) {
+    const text = normalizeStatus(status);
+    return text.includes('REST') ||
+      text.includes('RECUPERO') ||
+      text.includes('RIPOS') ||
+      text.includes('DESCANS') ||
+      text === 'PAUSA';
+  }
+
   function isActiveWorkStatus(status) {
+    const text = normalizeStatus(status);
     return (
-      status === 'WORK' ||
-      status.startsWith('WORK ') ||
-      status === 'AMRAP' ||
-      status === 'COUNTDOWN' ||
-      status === 'COUNT UP' ||
-      status === 'FOR TIME' ||
-      status.startsWith('ROUND ')
+      text === 'WORK' ||
+      text.startsWith('WORK ') ||
+      text.includes('LAVOR') ||
+      text.includes('TRABAJO') ||
+      text === 'AMRAP' ||
+      text === 'COUNTDOWN' ||
+      text === 'COUNT UP' ||
+      text === 'FOR TIME' ||
+      text.startsWith('ROUND ')
     );
   }
 
-  function maybePlayCue(statusText, timerText, audioMode, voiceLanguage) {
-    const status = String(statusText || '').trim().toUpperCase();
-    const prev = String(lastStatus || '').trim().toUpperCase();
-    const timer = String(timerText || '').trim();
-    const mode = String(audioMode || 'SOUNDS').toUpperCase();
+  function isFinishStatus(status) {
+    const text = normalizeStatus(status);
+    return text.includes('FINE') ||
+      text.includes('DONE') ||
+      text.includes('COMPLET') ||
+      text.includes('FINISH') ||
+      text.includes('TIME UP') ||
+      text.includes('TEMPO TERMINATO') ||
+      text.includes('TEMPO SCADUTO') ||
+      text.includes('TIEMPO AGOTADO') ||
+      text.includes('TERMIN');
+  }
 
-    const preparing = status.includes('PREPAR') || status.includes('GET READY');
-    const previousPreparing =
-      prev.includes('PREPAR') ||
-      prev.includes('GET READY');
+  function maybePlayCue(statusText, timerText, audioMode, voiceLanguage) {
+    const status = normalizeStatus(statusText);
+    const prev = normalizeStatus(lastStatus);
+    const timer = String(timerText || '').trim();
+    const mode = String(audioMode || 'SOUNDS').trim().toUpperCase();
+
+    const preparing = isPreparingStatus(status);
+    const previousPreparing = isPreparingStatus(prev);
     const activeWork = isActiveWorkStatus(status);
-    const restStatus =
-      status.includes('REST') ||
-      status.includes('RECUPERO');
+    const restStatus = isRestStatus(status);
+
     const configuringOrReady =
       status.includes('CONFIGURA') ||
       status.includes('SET UP') ||
-      status.includes('PRONTO') ||
-      status.includes('READY');
+      status === 'PRONTO' ||
+      status === 'READY';
 
-    // RESET / READY / CONFIGURATION must be silent.
-    // More importantly: if we leave PREPARATI for anything that is NOT an
-    // actual running state (for example an intermediate PAUSA during reset),
-    // cancel the countdown voice and never infer Go/Vai from that transition.
     if (
       configuringOrReady ||
       (previousPreparing && !preparing && !activeWork && !restStatus)
     ) {
       stopVoiceAudio();
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       lastStatus = statusText || '';
       lastTimer = timer;
       return;
     }
+
     if (
       mode === 'SOUNDS' &&
       preparing &&
@@ -184,43 +228,29 @@
       timer !== lastTimer &&
       /^\d+$/.test(timer)
     ) {
-      const wasPreparing =
-        prev.includes('PREPAR') ||
-        prev.includes('GET READY');
-
-      if (!wasPreparing && 'speechSynthesis' in window) {
+      if (!previousPreparing && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
 
-      // Cast browsers can defer/skip very short speechSynthesis utterances
-      // arriving once per second. The countdown therefore uses local,
-      // preloaded MP3 numbers. speechSynthesis remains only as fallback.
       if (!playVoiceAsset(timer, voiceLanguage)) {
         speakCue(timer, voiceLanguage, true);
       }
     }
 
     if (status !== prev && mode !== 'SILENT') {
-      const isFinish =
-        status.includes('FINE') ||
-        status.includes('DONE') ||
-        status.includes('COMPLET') ||
-        status.includes('TIME UP') ||
-        status.includes('TEMPO TERMINATO');
-
-      if (isFinish) {
+      if (isFinishStatus(status)) {
         if (mode === 'VOICE') {
           if (!playVoiceAsset('complete', voiceLanguage)) finishCue();
         } else {
           finishCue();
         }
-      } else if (status.includes('REST')) {
+      } else if (restStatus) {
         if (mode === 'VOICE') {
           if (!playVoiceAsset('rest', voiceLanguage)) restCue();
         } else {
           restCue();
         }
-      } else if (activeWork && (previousPreparing || prev.includes('REST'))) {
+      } else if (activeWork && (previousPreparing || isRestStatus(prev))) {
         if (mode === 'VOICE') {
           const cueName = previousPreparing ? 'go' : 'work';
           if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
@@ -234,20 +264,82 @@
     lastTimer = timer;
   }
 
-  function updateTimer(data) {
+  function resolveStatusAndTimeCap(data) {
     const rawStatus = String(data.statusText || '');
-    const legacyParts = rawStatus.split('•').map(part => part.trim());
-    const legacyTimeCap =
-      legacyParts.length > 1 &&
-      legacyParts[1].toUpperCase().startsWith('TIME CAP')
-        ? legacyParts.slice(1).join(' • ')
-        : '';
-    const statusText = String(
-      data.statusBaseText ||
-      (legacyTimeCap ? legacyParts[0] : rawStatus) ||
-      ''
-    );
-    const timeCapText = String(data.timeCapText || legacyTimeCap || '');
+    const parts = rawStatus.split('•').map(part => part.trim()).filter(Boolean);
+
+    let legacyTimeCap = '';
+    const baseParts = [];
+
+    parts.forEach(part => {
+      if (!legacyTimeCap && normalizeStatus(part).startsWith('TIME CAP')) {
+        legacyTimeCap = part;
+      } else {
+        baseParts.push(part);
+      }
+    });
+
+    return {
+      statusText: String(data.statusBaseText || baseParts[0] || rawStatus || 'IRON WOD'),
+      timeCapText: String(data.timeCapText || legacyTimeCap || '')
+    };
+  }
+
+  function classifyFooterPart(text) {
+    const normalized = normalizeStatus(text);
+
+    if (
+      normalized.startsWith('ROUND') ||
+      normalized.startsWith('ROUNDS') ||
+      normalized.startsWith('RONDA')
+    ) {
+      return 'footer-round';
+    }
+
+    if (
+      normalized.startsWith('BLOCCO') ||
+      normalized.startsWith('BLOCK') ||
+      normalized.startsWith('BLOQUE')
+    ) {
+      return 'footer-block';
+    }
+
+    return 'footer-mode';
+  }
+
+  function renderFooter(footerText) {
+    const raw = String(footerText || '').trim();
+
+    if (!raw || !raw.includes('•')) {
+      footerEl.textContent = raw || 'TIMER';
+      return;
+    }
+
+    const parts = raw
+      .split('•')
+      .map(part => part.trim())
+      .filter(Boolean);
+
+    footerEl.textContent = '';
+
+    parts.forEach((part, index) => {
+      if (index > 0) {
+        const separator = document.createElement('span');
+        separator.className = 'footer-part footer-separator';
+        separator.textContent = '  •  ';
+        footerEl.appendChild(separator);
+      }
+
+      const span = document.createElement('span');
+      span.className = `footer-part ${classifyFooterPart(part)}`;
+      span.textContent = part;
+      footerEl.appendChild(span);
+    });
+  }
+
+  function updateTimer(data) {
+    const resolved = resolveStatusAndTimeCap(data);
+    const statusText = resolved.statusText;
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
 
@@ -259,12 +351,13 @@
     );
 
     statusEl.textContent = statusText;
-    timeCapEl.textContent = timeCapText;
-    timeCapEl.classList.toggle('hidden', !timeCapText);
     timerEl.textContent = timerText;
-    footerEl.textContent = footerText;
+    renderFooter(footerText);
 
-    const normalizedStatus = statusText.trim().toUpperCase();
+    timeCapEl.textContent = resolved.timeCapText;
+    timeCapEl.classList.toggle('hidden', !resolved.timeCapText);
+
+    const normalizedStatus = normalizeStatus(statusText);
     const isConfiguration =
       normalizedStatus.includes('CONFIGURA') ||
       normalizedStatus.includes('SET UP');
@@ -281,6 +374,8 @@
     timeCapEl.textContent = '';
     timeCapEl.classList.add('hidden');
     statusEl.style.color = '#ff6b00';
+    stopVoiceAudio();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     lastStatus = '';
     lastTimer = '';
   }
@@ -290,9 +385,15 @@
   const context = cast.framework.CastReceiverContext.getInstance();
   context.addCustomMessageListener(NAMESPACE, event => {
     let data = event.data;
+
     if (typeof data === 'string') {
-      try { data = JSON.parse(data); } catch (_) { return; }
+      try {
+        data = JSON.parse(data);
+      } catch (_) {
+        return;
+      }
     }
+
     if (!data || typeof data !== 'object') return;
     if (data.type === 'timer') updateTimer(data);
     if (data.type === 'clear') clearTimer();

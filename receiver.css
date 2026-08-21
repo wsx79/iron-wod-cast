@@ -53,3 +53,59 @@ html, body {
   line-height: 1;
   letter-spacing: 0.055em;
 }
+
+
+/* ============================================================
+   IRON WOD CAST — semantic structured-workout additions only.
+   The original 16e01f7 fullscreen geometry above is untouched.
+   ============================================================ */
+
+.time-cap {
+  position: absolute;
+  top: 1.2vh;
+  right: 1.4vw;
+  max-width: 38vw;
+  color: #ff6b00;
+  font-size: clamp(25px, 3.4vh, 52px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+/* Structured footer:
+   ROUND = blue
+   mode (FOR TIME / AMRAP / EMOM...) = grey
+   BLOCK = orange
+   It intentionally inherits the original .footer size/position. */
+.footer .footer-part {
+  display: inline;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.footer .footer-separator {
+  color: #666;
+}
+
+.footer .footer-round {
+  color: #2196f3;
+}
+
+.footer .footer-mode {
+  color: #aaa;
+}
+
+.footer .footer-block {
+  color: #ff6b00;
+}
