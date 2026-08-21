@@ -2,302 +2,301 @@
   'use strict';
 
   const NAMESPACE = 'urn:x-cast:com.example.crossboxpro.timer';
-  const context = cast.framework.CastReceiverContext.getInstance();
-  const card = document.getElementById('timer-card');
-  const status = document.getElementById('status');
-  const time = document.getElementById('time');
-  const timeCap = document.getElementById('time-cap');
-  const footer = document.getElementById('footer');
+  const statusEl = document.getElementById('statusText');
+  const timerEl = document.getElementById('timerText');
+  const footerEl = document.getElementById('footerText');
+  const timeCapEl = document.getElementById('timeCapText');
 
-  const AUDIO_MODE = Object.freeze({
-    VOICE: 'VOICE',
-    SOUNDS: 'SOUNDS',
-    SILENT: 'SILENT'
-  });
-
-  const SUPPORTED_VOICE_LANGUAGES = new Set(['it', 'en', 'es']);
-  const AUDIO_ASSET_VERSION = '20260821-g112';
-
-  let previousAudioSnapshot = null;
-  let currentVoice = null;
+  let lastStatus = '';
+  let lastTimer = '';
   let audioContext = null;
 
-  function normalizeAudioMode(value) {
-    const normalized = String(value || '').trim().toUpperCase();
-    return Object.values(AUDIO_MODE).includes(normalized) ? normalized : AUDIO_MODE.SOUNDS;
+  const voiceAudio = { it: {}, en: {}, es: {} };
+  let activeVoiceAudio = null;
+
+  function preloadVoiceAudio() {
+    ['it', 'en', 'es'].forEach(language => {
+      for (let number = 1; number <= 10; number += 1) {
+        const audio = new Audio(`voice/${language}/${number}.mp3`);
+        audio.preload = 'auto';
+        voiceAudio[language][String(number)] = audio;
+      }
+
+      ['go', 'work', 'rest', 'complete'].forEach(name => {
+        const audio = new Audio(`voice/${language}/${name}.mp3`);
+        audio.preload = 'auto';
+        voiceAudio[language][name] = audio;
+      });
+    });
   }
 
-  function normalizeVoiceLanguage(value) {
-    const raw = String(value || '').trim().toLowerCase();
-    const primary = raw.split(/[-_]/)[0];
-    return SUPPORTED_VOICE_LANGUAGES.has(primary) ? primary : 'en';
+  function stopVoiceAudio() {
+    if (activeVoiceAudio) {
+      try {
+        activeVoiceAudio.pause();
+        activeVoiceAudio.currentTime = 0;
+      } catch (_) {}
+      activeVoiceAudio = null;
+    }
   }
 
-  function normalizedStatus(value) {
-    return String(value || '')
-      .trim()
-      .toUpperCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+  function playVoiceAsset(name, language) {
+    const lang = language === 'es' ? 'es' : (language === 'en' ? 'en' : 'it');
+    const template = voiceAudio[lang][String(name)];
+    if (!template) return false;
+
+    try {
+      stopVoiceAudio();
+      const audio = template.cloneNode(true);
+      audio.volume = 1.0;
+      activeVoiceAudio = audio;
+      audio.addEventListener('ended', () => {
+        if (activeVoiceAudio === audio) activeVoiceAudio = null;
+      }, { once: true });
+      const result = audio.play();
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => {});
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
-  function isPreparationStatus(value) {
-    const text = normalizedStatus(value);
-    return text.includes('GET READY') ||
-      text.includes('READY') ||
-      text.includes('PREP') ||
-      text.includes('PREPAR');
-  }
-
-  function isRestStatus(value) {
-    const text = normalizedStatus(value);
-    return text === 'REST' ||
-      text.includes('REST ') ||
-      text.includes(' RIPOS') ||
-      text.startsWith('RIPOS') ||
-      text.includes('DESCANS') ||
-      text.startsWith('PAUSA');
-  }
-
-  function isWorkStatus(value) {
-    const text = normalizedStatus(value);
-    return text === 'WORK' ||
-      text.startsWith('WORK ') ||
-      text.includes(' LAVOR') ||
-      text.startsWith('LAVOR') ||
-      text.includes('TRABAJO') ||
-      text.startsWith('TRABAJO');
-  }
-
-  function isFinishedStatus(value) {
-    const text = normalizedStatus(value);
-    return text.includes('FINISH') ||
-      text.includes('COMPLET') ||
-      text.includes('DONE') ||
-      text.includes('TIME UP') ||
-      text.includes('TERMIN') ||
-      text.includes('FINE') ||
-      text.includes('TEMPO SCADUTO') ||
-      text.includes('TIEMPO AGOTADO');
-  }
-
-  function countdownNumber(data) {
-    if (!isPreparationStatus(data.statusBaseText || data.statusText)) return null;
-    const raw = String(data.timerText || '').trim();
-    if (!/^\d{1,2}$/.test(raw)) return null;
-    const value = Number(raw);
-    return Number.isInteger(value) && value >= 1 && value <= 10 ? value : null;
-  }
-
-  function getAudioContext() {
+  function ensureAudio() {
     if (!audioContext) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return null;
-      audioContext = new AudioContextClass();
+      if (AudioContextClass) audioContext = new AudioContextClass();
     }
-    if (audioContext.state === 'suspended') {
+    if (audioContext && audioContext.state === 'suspended') {
       audioContext.resume().catch(() => {});
     }
     return audioContext;
   }
 
-  function playTone(frequency, durationMs, delayMs = 0, gainValue = 0.22) {
-    const ctx = getAudioContext();
+  function tone(frequency, durationMs, gainValue, delayMs = 0) {
+    const ctx = ensureAudio();
     if (!ctx) return;
-
     const startAt = ctx.currentTime + delayMs / 1000;
-    const stopAt = startAt + durationMs / 1000;
-    const oscillator = ctx.createOscillator();
+    const endAt = startAt + durationMs / 1000;
+    const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(frequency, startAt);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(frequency, startAt);
     gain.gain.setValueAtTime(0.0001, startAt);
-    gain.gain.exponentialRampToValueAtTime(gainValue, startAt + 0.008);
-    gain.gain.setValueAtTime(gainValue, Math.max(startAt + 0.009, stopAt - 0.035));
-    gain.gain.exponentialRampToValueAtTime(0.0001, stopAt);
-
-    oscillator.connect(gain);
+    gain.gain.exponentialRampToValueAtTime(gainValue, startAt + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+    osc.connect(gain);
     gain.connect(ctx.destination);
-    oscillator.start(startAt);
-    oscillator.stop(stopAt + 0.01);
+    osc.start(startAt);
+    osc.stop(endAt + 0.02);
   }
 
-  function beepCountdown(number) {
-    const finalThree = number <= 3;
-    playTone(finalThree ? 1046.5 : 784, finalThree ? 150 : 95);
+  const countdownCue = () => tone(920, 120, 0.34);
+  const restCue = () => tone(650, 190, 0.34);
+  function workCue() {
+    tone(1180, 140, 0.36);
+    tone(1480, 150, 0.34, 150);
+  }
+  function finishCue() {
+    tone(880, 150, 0.34);
+    tone(1120, 170, 0.36, 165);
+    tone(1420, 240, 0.38, 350);
   }
 
-  function beepGoOrWork() {
-    playTone(1174.7, 180, 0);
-    playTone(1568, 260, 215);
-  }
-
-  function beepRest() {
-    playTone(659.3, 180, 0);
-    playTone(523.3, 220, 210);
-  }
-
-  function beepComplete() {
-    playTone(1046.5, 150, 0);
-    playTone(1318.5, 150, 190);
-    playTone(1568, 360, 380);
-  }
-
-  function voiceUrl(language, cue) {
-    const safeLanguage = normalizeVoiceLanguage(language);
-    const safeCue = String(cue).replace(/[^a-z0-9_-]/gi, '');
-    return new URL(`voice/${safeLanguage}/${safeCue}.mp3?v=${AUDIO_ASSET_VERSION}`, window.location.href).href;
-  }
-
-  function stopCurrentVoice() {
-    if (!currentVoice) return;
+  function speakCue(text, language, cancelPrevious = true) {
+    if (!('speechSynthesis' in window)) return false;
     try {
-      currentVoice.pause();
-      currentVoice.currentTime = 0;
+      if (cancelPrevious) {
+        window.speechSynthesis.cancel();
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = language === 'es' ? 'es-ES' : (language === 'en' ? 'en-US' : 'it-IT');
+      utterance.rate = 1.35;
+      utterance.volume = 1.0;
+      window.speechSynthesis.speak(utterance);
+      return true;
     } catch (_) {
-      // Best-effort cleanup only.
-    }
-    currentVoice = null;
-  }
-
-  function fallbackBeepForCue(cue) {
-    if (/^\d+$/.test(cue)) {
-      beepCountdown(Number(cue));
-    } else if (cue === 'rest') {
-      beepRest();
-    } else if (cue === 'complete') {
-      beepComplete();
-    } else {
-      beepGoOrWork();
+      return false;
     }
   }
 
-  function playVoiceCue(language, cue) {
-    stopCurrentVoice();
-
-    const audio = new Audio();
-    currentVoice = audio;
-    audio.preload = 'auto';
-    audio.src = voiceUrl(language, cue);
-    audio.volume = 1.0;
-
-    let fallbackPlayed = false;
-    const fallback = () => {
-      if (fallbackPlayed || currentVoice !== audio) return;
-      fallbackPlayed = true;
-      console.warn(`IRON WOD voice cue unavailable: ${audio.src}`);
-      fallbackBeepForCue(String(cue));
-    };
-
-    audio.onerror = fallback;
-    audio.onended = () => {
-      if (currentVoice === audio) currentVoice = null;
-    };
-
-    const result = audio.play();
-    if (result && typeof result.catch === 'function') {
-      result.catch(error => {
-        console.warn('IRON WOD Cast voice playback rejected', error);
-        fallback();
-      });
-    }
+  function isActiveWorkStatus(status) {
+    return (
+      status === 'WORK' ||
+      status.startsWith('WORK ') ||
+      status === 'AMRAP' ||
+      status === 'COUNTDOWN' ||
+      status === 'COUNT UP' ||
+      status === 'FOR TIME' ||
+      status.startsWith('ROUND ')
+    );
   }
 
-  function cueForTransition(previous, current) {
-    const statusText = current.statusBaseText || current.statusText || '';
-    const previousStatus = previous ? (previous.statusBaseText || previous.statusText || '') : '';
+  function maybePlayCue(statusText, timerText, audioMode, voiceLanguage) {
+    const status = String(statusText || '').trim().toUpperCase();
+    const prev = String(lastStatus || '').trim().toUpperCase();
+    const timer = String(timerText || '').trim();
+    const mode = String(audioMode || 'SOUNDS').toUpperCase();
 
-    const number = countdownNumber(current);
-    const previousNumber = previous ? countdownNumber(previous) : null;
-    if (number !== null && number !== previousNumber) {
-      return String(number);
-    }
+    const preparing = status.includes('PREPAR') || status.includes('GET READY');
+    const previousPreparing =
+      prev.includes('PREPAR') ||
+      prev.includes('GET READY');
+    const activeWork = isActiveWorkStatus(status);
+    const restStatus =
+      status.includes('REST') ||
+      status.includes('RECUPERO');
+    const configuringOrReady =
+      status.includes('CONFIGURA') ||
+      status.includes('SET UP') ||
+      status.includes('PRONTO') ||
+      status.includes('READY');
 
-    if (previous && isPreparationStatus(previousStatus) && !isPreparationStatus(statusText)) {
-      return 'go';
-    }
-
-    if (isFinishedStatus(statusText) && (!previous || !isFinishedStatus(previousStatus))) {
-      return 'complete';
-    }
-
-    if (isRestStatus(statusText) && (!previous || !isRestStatus(previousStatus))) {
-      return 'rest';
-    }
-
-    if (isWorkStatus(statusText) && (!previous || !isWorkStatus(previousStatus))) {
-      return 'work';
-    }
-
-    return null;
-  }
-
-  function handleTimerAudio(data) {
-    const current = {
-      statusText: data.statusText || '',
-      statusBaseText: data.statusBaseText || '',
-      timerText: data.timerText || '',
-      audioMode: normalizeAudioMode(data.audioMode),
-      voiceLanguage: normalizeVoiceLanguage(data.voiceLanguage)
-    };
-
-    const cue = cueForTransition(previousAudioSnapshot, current);
-    previousAudioSnapshot = current;
-
-    if (!cue || current.audioMode === AUDIO_MODE.SILENT) return;
-
-    if (current.audioMode === AUDIO_MODE.VOICE) {
-      playVoiceCue(current.voiceLanguage, cue);
+    // RESET / READY / CONFIGURATION must be silent.
+    // More importantly: if we leave PREPARATI for anything that is NOT an
+    // actual running state (for example an intermediate PAUSA during reset),
+    // cancel the countdown voice and never infer Go/Vai from that transition.
+    if (
+      configuringOrReady ||
+      (previousPreparing && !preparing && !activeWork && !restStatus)
+    ) {
+      stopVoiceAudio();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      lastStatus = statusText || '';
+      lastTimer = timer;
       return;
     }
-
-    if (/^\d+$/.test(cue)) {
-      beepCountdown(Number(cue));
-    } else if (cue === 'rest') {
-      beepRest();
-    } else if (cue === 'complete') {
-      beepComplete();
-    } else {
-      beepGoOrWork();
+    if (
+      mode === 'SOUNDS' &&
+      preparing &&
+      timer !== lastTimer &&
+      /^\d+$/.test(timer)
+    ) {
+      countdownCue();
     }
-  }
 
-  function showTimer(data) {
-    if (!data || data.type !== 'timer') return;
-    const rawStatus = data.statusText || '';
-    const legacyParts = rawStatus.split('•').map(part => part.trim());
-    const legacyTimeCap = legacyParts.length > 1 && legacyParts[1].toUpperCase().startsWith('TIME CAP')
-      ? legacyParts.slice(1).join(' • ')
-      : '';
-    const baseStatus = data.statusBaseText || (legacyTimeCap ? legacyParts[0] : rawStatus) || 'IRON WOD';
-    const resolvedTimeCap = data.timeCapText || legacyTimeCap;
+    if (
+      mode === 'VOICE' &&
+      preparing &&
+      timer !== lastTimer &&
+      /^\d+$/.test(timer)
+    ) {
+      const wasPreparing =
+        prev.includes('PREPAR') ||
+        prev.includes('GET READY');
 
-    status.textContent = baseStatus;
-    time.textContent = data.timerText || '00:00';
-    timeCap.textContent = resolvedTimeCap;
-    timeCap.classList.toggle('hidden', !resolvedTimeCap);
-    footer.textContent = data.footerText || 'TIMER';
-    document.documentElement.style.setProperty('--accent', data.accentColor || '#ff6d00');
-    card.classList.remove('hidden');
-
-    handleTimerAudio(data);
-  }
-
-  context.addCustomMessageListener(NAMESPACE, event => {
-    try {
-      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      if (data && data.type === 'clear') {
-        stopCurrentVoice();
-        previousAudioSnapshot = null;
-        card.classList.add('hidden');
-        return;
+      if (!wasPreparing && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
       }
-      showTimer(data);
-    } catch (error) {
-      console.error('IRON WOD receiver message error', error);
+
+      // Cast browsers can defer/skip very short speechSynthesis utterances
+      // arriving once per second. The countdown therefore uses local,
+      // preloaded MP3 numbers. speechSynthesis remains only as fallback.
+      if (!playVoiceAsset(timer, voiceLanguage)) {
+        speakCue(timer, voiceLanguage, true);
+      }
     }
+
+    if (status !== prev && mode !== 'SILENT') {
+      const isFinish =
+        status.includes('FINE') ||
+        status.includes('DONE') ||
+        status.includes('COMPLET') ||
+        status.includes('TIME UP') ||
+        status.includes('TEMPO TERMINATO');
+
+      if (isFinish) {
+        if (mode === 'VOICE') {
+          if (!playVoiceAsset('complete', voiceLanguage)) finishCue();
+        } else {
+          finishCue();
+        }
+      } else if (status.includes('REST')) {
+        if (mode === 'VOICE') {
+          if (!playVoiceAsset('rest', voiceLanguage)) restCue();
+        } else {
+          restCue();
+        }
+      } else if (activeWork && (previousPreparing || prev.includes('REST'))) {
+        if (mode === 'VOICE') {
+          const cueName = previousPreparing ? 'go' : 'work';
+          if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
+        } else {
+          workCue();
+        }
+      }
+    }
+
+    lastStatus = statusText || '';
+    lastTimer = timer;
+  }
+
+  function updateTimer(data) {
+    const rawStatus = String(data.statusText || '');
+    const legacyParts = rawStatus.split('•').map(part => part.trim());
+    const legacyTimeCap =
+      legacyParts.length > 1 &&
+      legacyParts[1].toUpperCase().startsWith('TIME CAP')
+        ? legacyParts.slice(1).join(' • ')
+        : '';
+    const statusText = String(
+      data.statusBaseText ||
+      (legacyTimeCap ? legacyParts[0] : rawStatus) ||
+      ''
+    );
+    const timeCapText = String(data.timeCapText || legacyTimeCap || '');
+    const timerText = String(data.timerText || '');
+    const footerText = String(data.footerText || '');
+
+    maybePlayCue(
+      statusText,
+      timerText,
+      data.audioMode || 'SOUNDS',
+      data.voiceLanguage || 'it'
+    );
+
+    statusEl.textContent = statusText;
+    timeCapEl.textContent = timeCapText;
+    timeCapEl.classList.toggle('hidden', !timeCapText);
+    timerEl.textContent = timerText;
+    footerEl.textContent = footerText;
+
+    const normalizedStatus = statusText.trim().toUpperCase();
+    const isConfiguration =
+      normalizedStatus.includes('CONFIGURA') ||
+      normalizedStatus.includes('SET UP');
+
+    statusEl.style.color = isConfiguration
+      ? '#ff6b00'
+      : (data.accentColor ? String(data.accentColor) : '#ff6b00');
+  }
+
+  function clearTimer() {
+    statusEl.textContent = 'IRON WOD';
+    timerEl.textContent = '00:00';
+    footerEl.textContent = 'TIMER';
+    timeCapEl.textContent = '';
+    timeCapEl.classList.add('hidden');
+    statusEl.style.color = '#ff6b00';
+    lastStatus = '';
+    lastTimer = '';
+  }
+
+  preloadVoiceAudio();
+
+  const context = cast.framework.CastReceiverContext.getInstance();
+  context.addCustomMessageListener(NAMESPACE, event => {
+    let data = event.data;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch (_) { return; }
+    }
+    if (!data || typeof data !== 'object') return;
+    if (data.type === 'timer') updateTimer(data);
+    if (data.type === 'clear') clearTimer();
   });
 
-  context.start();
+  context.start({ disableIdleTimeout: true });
 })();
