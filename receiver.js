@@ -426,8 +426,8 @@
   function renderFooter(footerText) {
     const raw = String(footerText || '').trim();
 
-    if (!raw || !raw.includes('•')) {
-      footerEl.textContent = raw || 'TIMER';
+    if (!raw) {
+      footerEl.textContent = 'TIMER';
       return;
     }
 
@@ -453,9 +453,21 @@
     });
   }
 
+  function compactCompletionStatus(value) {
+    const raw = String(value || '').trim();
+    const normalized = normalizeStatus(raw);
+
+    if (normalized.startsWith('COMPLETATO ENTRO TIME CAP')) return 'COMPLETATO';
+    if (normalized.startsWith('COMPLETED WITHIN TIME CAP')) return 'COMPLETED';
+    if (normalized.startsWith('COMPLETADO DENTRO DEL TIME CAP')) return 'COMPLETADO';
+    if (normalized.startsWith('COMPLETADO DENTRO DEL TIEMPO')) return 'COMPLETADO';
+
+    return raw;
+  }
+
   function updateTimer(data) {
     const resolved = resolveStatusAndTimeCap(data);
-    const statusText = resolved.statusText;
+    const statusText = compactCompletionStatus(resolved.statusText);
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
 

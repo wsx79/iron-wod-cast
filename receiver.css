@@ -90,7 +90,7 @@ html, body {
 .footer .footer-part {
   display: inline;
   font: inherit;
-  font-size: 0.94em;
+  font-size: 0.96em;
   line-height: inherit;
   letter-spacing: inherit;
 }
@@ -112,14 +112,7 @@ html, body {
 }
 
 
-/* ROUND moves beside WORK/status, while keeping the original top-line geometry. */
-.status .status-main {
-  color: inherit;
-}
-
-.status .status-round {
-  color: #2196f3;
-  font-size: 0.72em;
-  letter-spacing: 0.055em;
-  vertical-align: 0.08em;
+/* For Time / structured footer refinement: ROUND is intentionally more prominent. */
+.footer .footer-round {
+  font-size: 1.14em;
 }
