@@ -503,7 +503,16 @@
   prewarmAudioAssets();
 
   const context = cast.framework.CastReceiverContext.getInstance();
+  let currentHostSenderId = null;
+
   context.addCustomMessageListener(NAMESPACE, event => {
+    if (!currentHostSenderId) {
+      currentHostSenderId = event.senderId;
+    }
+
+    if (event.senderId !== currentHostSenderId) {
+      return;
+    }
     let data = event.data;
 
     if (typeof data === 'string') {
@@ -518,6 +527,19 @@
     if (data.type === 'timer') updateTimer(data);
     if (data.type === 'clear') clearTimer();
   });
+
+  context.addEventListener(
+    cast.framework.system.EventType.SENDER_DISCONNECTED,
+    event => {
+      if (event.senderId === currentHostSenderId) {
+        currentHostSenderId = null;
+      }
+
+      if (context.getSenders().length === 0) {
+        clearTimer();
+      }
+    }
+  );
 
   context.start({ disableIdleTimeout: true });
 })();
