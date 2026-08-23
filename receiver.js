@@ -57,8 +57,12 @@
 
   function prefetchAsset(url) {
     try {
-      fetch(url, { cache: 'force-cache' }).catch(() => {});
-    } catch (_) {}
+      fetch(url, { cache: 'force-cache' }).catch(error => {
+        console.warn('[IRON WOD audio] prefetch failed:', url, error);
+      });
+    } catch (error) {
+      console.warn('[IRON WOD audio] prefetch exception:', url, error);
+    }
   }
 
   function prewarmAudioAssets() {
@@ -115,6 +119,12 @@
 
       voicePlayer.onerror = () => {
         if (activeVoiceAudio === voicePlayer) activeVoiceAudio = null;
+        console.warn(
+          '[IRON WOD audio] voice asset error:',
+          name,
+          normalizeLanguage(language),
+          voicePlayer.error ? `code=${voicePlayer.error.code}` : 'unknown'
+        );
         const spoken = speakCue(localizedFallbackText(name, language), language, true);
         if (!spoken) fallbackSoundForCue(name);
       };
@@ -146,19 +156,42 @@
   }
 
   function playSoundAsset(name) {
+    const url = soundUrl(name);
+
     try {
       stopSoundAudio();
-      soundPlayer.src = soundUrl(name);
+
+      soundPlayer.onerror = () => {
+        const mediaError = soundPlayer.error;
+        console.warn(
+          '[IRON WOD audio] sound asset error:',
+          name,
+          url,
+          mediaError ? `code=${mediaError.code}` : 'unknown'
+        );
+        playToneFallback(name);
+      };
+
+      soundPlayer.src = url;
       soundPlayer.currentTime = 0;
       soundPlayer.volume = 1.0;
       soundPlayer.load();
 
       const result = soundPlayer.play();
       if (result && typeof result.catch === 'function') {
-        result.catch(() => {});
+        result.catch(error => {
+          console.warn(
+            '[IRON WOD audio] soundPlayer.play() rejected:',
+            name,
+            error
+          );
+          playToneFallback(name);
+        });
       }
       return true;
-    } catch (_) {
+    } catch (error) {
+      console.warn('[IRON WOD audio] sound playback exception:', name, error);
+      playToneFallback(name);
       return false;
     }
   }
@@ -190,16 +223,77 @@
 
   function tone(frequency, durationMs, gainValue, delayMs = 0) {
     const ctx = ensureAudio();
-    if (!ctx) return;
+    if (!ctx) {
+      console.warn('[IRON WOD audio] WebAudio unavailable');
+      return false;
+    }
 
     if (ctx.state === 'suspended') {
       ctx.resume()
-        .then(() => scheduleTone(ctx, frequency, durationMs, gainValue, delayMs))
-        .catch(() => {});
+        .then(() => {
+          scheduleTone(ctx, frequency, durationMs, gainValue, delayMs);
+        })
+        .catch(error => {
+          console.warn('[IRON WOD audio] AudioContext.resume() rejected:', error);
+        });
+      return true;
+    }
+
+    try {
+      scheduleTone(ctx, frequency, durationMs, gainValue, delayMs);
+      return true;
+    } catch (error) {
+      console.warn('[IRON WOD audio] WebAudio tone failed:', error);
+      return false;
+    }
+  }
+
+  function playToneFallback(name) {
+    const cue = String(name);
+
+    if (cue === 'countdown') {
+      tone(920, 120, 0.34);
       return;
     }
 
-    scheduleTone(ctx, frequency, durationMs, gainValue, delayMs);
+    if (cue === 'rest') {
+      tone(650, 190, 0.34);
+      return;
+    }
+
+    if (cue === 'complete') {
+      tone(880, 150, 0.34);
+      tone(1120, 170, 0.36, 165);
+      tone(1420, 240, 0.38, 350);
+      return;
+    }
+
+    tone(1180, 140, 0.36);
+    tone(1480, 150, 0.34, 150);
+  }
+
+  function primeAudioPipeline() {
+    prewarmAudioAssets();
+
+    try {
+      voicePlayer.preload = 'auto';
+      soundPlayer.preload = 'auto';
+
+      soundPlayer.src = soundUrl('countdown');
+      soundPlayer.load();
+
+      voicePlayer.src = voiceUrl('1', 'it');
+      voicePlayer.load();
+    } catch (error) {
+      console.warn('[IRON WOD audio] HTMLAudio prime failed:', error);
+    }
+
+    const ctx = ensureAudio();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(error => {
+        console.warn('[IRON WOD audio] initial AudioContext.resume() rejected:', error);
+      });
+    }
   }
 
   const countdownCue = () => playSoundAsset('countdown');
@@ -512,7 +606,7 @@
   }
 
 
-  prewarmAudioAssets();
+  primeAudioPipeline();
 
   const context = cast.framework.CastReceiverContext.getInstance();
   let currentHostSenderId = null;
