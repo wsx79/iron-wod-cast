@@ -240,7 +240,7 @@ html, body {
 .timer-screen.has-interval .interval-number {
   color: var(--red) !important;
   font-family: "Courier New", monospace !important;
-  font-size: clamp(150px, 18vw, 340px) !important;
+  font-size: clamp(150px, 20vw, 340px) !important;
   line-height: .82 !important;
   font-weight: 700 !important;
   letter-spacing: -.04em !important;
@@ -257,8 +257,8 @@ html, body {
 }
 
 .timer-screen.has-interval .led-char {
-  width: min(21vw, 35vh) !important;
-  height: min(39vw, 55vh) !important;
+  width: min(20vw, 34vh) !important;
+  height: min(38vw, 54vh) !important;
 }
 
 .timer-screen.has-interval .led-colon {
