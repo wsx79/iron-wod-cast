@@ -8,18 +8,31 @@
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 </head>
 <body>
-  <main id="timerScreen" class="timer-screen state-idle">
-    <div id="roundText" class="round-label hidden"></div>
+  <!--
+    SOURCE LAYER
+    These are the exact DOM ids expected by the proven working receiver.js.
+    receiver.js owns them completely. The LED code NEVER writes here.
+  -->
+  <div id="receiverSource" class="receiver-source" aria-hidden="true">
+    <div id="statusText">IRON WOD</div>
+    <div id="timerText">00:00</div>
+    <div id="timeCapText" class="hidden"></div>
+    <div id="footerText">TIMER</div>
+  </div>
 
-    <div id="statusText" class="status">IRON WOD</div>
-
-    <div id="timerText" class="timer led-timer" aria-label="00:00"></div>
-
-    <div id="timeCapText" class="time-cap hidden"></div>
-
-    <div id="footerText" class="footer">TIMER</div>
+  <!-- VISUAL-ONLY LED MIRROR -->
+  <main id="ledScreen" class="timer-screen state-idle">
+    <div id="ledTopCounter" class="top-counter hidden"></div>
+    <div id="ledStatus" class="status">IRON WOD</div>
+    <div id="ledTimer" class="timer" aria-label="00:00"></div>
+    <div id="ledTimeCap" class="time-cap hidden"></div>
+    <div id="ledFooter" class="footer">TIMER</div>
   </main>
 
+  <!-- Working Cast receiver FIRST. -->
   <script src="receiver.js"></script>
+
+  <!-- Visual mirror only; it has no Cast namespace/listener/context code. -->
+  <script src="led-display.js"></script>
 </body>
 </html>

@@ -7,21 +7,30 @@
   --green: #16e33f;
   --red: #ff2618;
   --orange: #ff6b00;
-  --segment-off: rgba(255,255,255,0.025);
+  --off: rgba(255,255,255,.024);
 }
 
 html, body {
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: 0;
   overflow: hidden;
-  background: var(--bg);
-  color: var(--white);
-  font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
+  background: #000;
 }
 
 * { box-sizing: border-box; }
+
+/* The proven receiver continues to render here, but this layer is not visible. */
+.receiver-source {
+  position: fixed;
+  left: -10000px;
+  top: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.hidden { visibility: hidden; }
 
 .timer-screen {
   position: fixed;
@@ -30,106 +39,84 @@ html, body {
   height: 100vh;
   overflow: hidden;
   background: #000;
+  color: var(--white);
+  font-family: "Courier New", monospace;
 }
 
-/* ---------- Top information ---------- */
-
-.round-label {
+.top-counter {
   position: absolute;
-  top: 4.2vh;
   left: 4vw;
-  max-width: 36vw;
+  top: 4vh;
   color: var(--blue);
-  font-family: "Courier New", monospace;
-  font-size: clamp(34px, 4.6vw, 88px);
-  line-height: 1;
+  font-size: clamp(38px, 5.2vw, 100px);
   font-weight: 700;
-  letter-spacing: 0.035em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-shadow:
-    0 0 4px currentColor,
-    0 0 13px currentColor;
+  letter-spacing: .05em;
+  text-shadow: 0 0 4px currentColor, 0 0 13px currentColor;
 }
 
 .status {
   position: absolute;
   top: 7vh;
-  left: 28vw;
-  right: 10vw;
-  text-align: center;
+  left: 23vw;
+  right: 7vw;
   color: var(--orange);
-  font-family: "Courier New", monospace;
-  font-size: clamp(56px, 8.7vw, 164px);
+  text-align: center;
+  font-size: clamp(58px, 8.4vw, 158px);
   line-height: .95;
   font-weight: 700;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
+  letter-spacing: .05em;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
-  text-shadow:
-    0 0 4px currentColor,
-    0 0 18px currentColor;
+  text-transform: uppercase;
+  text-shadow: 0 0 4px currentColor, 0 0 17px currentColor;
 }
-
-/* ---------- Seven segment clock ---------- */
 
 .timer {
   position: absolute;
-  left: 5vw;
-  right: 5vw;
   top: 46%;
-  height: min(39vw, 48vh);
+  left: 4vw;
+  right: 4vw;
+  height: min(31vw, 43vh);
   transform: translateY(-50%);
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: min(1.2vw, 18px);
+  align-items: center;
+  gap: min(1vw, 16px);
   color: var(--red);
 }
 
 .led-char {
   position: relative;
-  width: min(17.1vw, 28vh);
-  height: min(31vw, 43vh);
   flex: 0 0 auto;
-}
-
-.led-char.narrow {
-  width: min(6.2vw, 9vh);
+  width: min(17vw, 28vh);
+  height: min(31vw, 43vh);
 }
 
 .led-seg {
   position: absolute;
-  background: var(--segment-off);
   opacity: .11;
+  background: var(--off);
 }
 
 .led-seg.on {
-  background: currentColor;
   opacity: 1;
-  filter:
-    drop-shadow(0 0 4px currentColor)
-    drop-shadow(0 0 10px currentColor);
+  background: currentColor;
+  filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px currentColor);
 }
 
-/* horizontal segments */
 .led-a, .led-g, .led-d {
   left: 18%;
   width: 64%;
   height: 8.5%;
-  clip-path: polygon(7% 0, 93% 0, 100% 50%, 93% 100%, 7% 100%, 0 50%);
+  clip-path: polygon(7% 0,93% 0,100% 50%,93% 100%,7% 100%,0 50%);
 }
 .led-a { top: 0; }
 .led-g { top: 45.7%; }
 .led-d { bottom: 0; }
 
-/* vertical segments */
 .led-b, .led-c, .led-e, .led-f {
   width: 13%;
   height: 39%;
-  clip-path: polygon(50% 0, 100% 8%, 100% 92%, 50% 100%, 0 92%, 0 8%);
+  clip-path: polygon(50% 0,100% 8%,100% 92%,50% 100%,0 92%,0 8%);
 }
 .led-b { top: 5.7%; right: 3.6%; }
 .led-c { bottom: 5.7%; right: 3.6%; }
@@ -138,150 +125,85 @@ html, body {
 
 .led-colon {
   position: relative;
-  width: min(5.4vw, 8vh);
+  width: min(5.2vw, 8vh);
   height: min(31vw, 43vh);
   flex: 0 0 auto;
 }
-
-.led-colon::before,
-.led-colon::after {
+.led-colon::before, .led-colon::after {
   content: "";
   position: absolute;
   left: 50%;
-  width: min(2.0vw, 3.2vh);
-  height: min(2.0vw, 3.2vh);
+  width: min(2vw, 3.2vh);
+  height: min(2vw, 3.2vh);
   border-radius: 50%;
   background: currentColor;
   transform: translateX(-50%);
-  filter:
-    drop-shadow(0 0 4px currentColor)
-    drop-shadow(0 0 10px currentColor);
+  filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 9px currentColor);
 }
 .led-colon::before { top: 30%; }
 .led-colon::after { bottom: 30%; }
 
-/* ---------- Time cap + bottom ---------- */
+.fallback-timer-text {
+  width: 100%;
+  text-align: center;
+  font-size: clamp(120px, 20vw, 400px);
+  font-weight: 700;
+  line-height: 1;
+}
 
 .time-cap {
   position: absolute;
-  left: 10vw;
-  right: 10vw;
   top: 72.5vh;
+  left: 8vw;
+  right: 8vw;
   text-align: center;
   color: var(--white);
-  font-family: "Courier New", monospace;
   font-size: clamp(28px, 3.4vw, 66px);
   font-weight: 700;
-  letter-spacing: .055em;
-  text-transform: uppercase;
+  letter-spacing: .05em;
   white-space: nowrap;
-  text-shadow: 0 0 4px rgba(255,255,255,.5);
 }
 
 .footer {
   position: absolute;
-  left: 7vw;
-  right: 7vw;
+  left: 5vw;
+  right: 5vw;
   bottom: 5vh;
+  color: var(--muted);
   text-align: center;
-  font-family: "Courier New", monospace;
-  font-size: clamp(28px, 3.7vw, 72px);
-  line-height: 1;
+  font-size: clamp(30px, 4vw, 76px);
   font-weight: 700;
   letter-spacing: .045em;
   text-transform: uppercase;
   white-space: nowrap;
-  overflow: hidden;
 }
 
-.footer .footer-part {
-  display: inline;
-  font: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-}
-
-.footer .footer-separator { color: #666; }
-.footer .footer-round { color: var(--blue); }
-.footer .footer-mode { color: var(--muted); }
-.footer .footer-block { color: var(--orange); }
-
-.hidden { visibility: hidden; }
-
-/* ---------- Semantic state colors ---------- */
-
-.timer-screen.state-work .status { color: var(--green); }
-.timer-screen.state-work .timer { color: var(--red); }
-
-.timer-screen.state-rest .status { color: var(--blue); }
-.timer-screen.state-rest .timer { color: var(--blue); }
-
-.timer-screen.state-otc .status { color: var(--red); }
-.timer-screen.state-otc .timer { color: var(--red); }
-
-.timer-screen.state-finished .status { color: var(--green); }
-.timer-screen.state-finished .timer { color: var(--white); }
-
-.timer-screen.state-prep .status { color: var(--orange); }
-.timer-screen.state-prep .timer { color: var(--orange); }
-
-.timer-screen.state-paused .status { color: var(--orange); }
-.timer-screen.state-paused .timer { color: var(--white); }
-
-.timer-screen.state-idle .status { color: var(--orange); }
-.timer-screen.state-idle .timer { color: var(--white); }
-
-/* A single preparation digit should not look tiny. */
-.timer.single-digit {
-  height: min(34vw, 52vh);
-}
-
-/* TV safe-area tweaks for 4:3 / unusual output modes. */
-@media (max-aspect-ratio: 4/3) {
-  .round-label {
-    top: 3vh;
-    left: 3vw;
-    font-size: clamp(28px, 4vw, 66px);
-  }
-
-  .status {
-    top: 8vh;
-    left: 25vw;
-    right: 4vw;
-    font-size: clamp(48px, 7vw, 110px);
-  }
-
-  .timer {
-    top: 47%;
-    left: 2vw;
-    right: 2vw;
-    height: min(36vw, 44vh);
-    gap: .7vw;
-  }
-
-  .led-char {
-    width: min(16.5vw, 25vh);
-    height: min(30vw, 40vh);
-  }
-
-  .time-cap { top: 73vh; }
-  .footer { bottom: 4vh; }
-}
-
-
-/* Structured Intervals Cast layout:
-   top-left shows only the phase fraction (1/3);
-   bottom shows FASE prominently. */
 .footer.phase-footer {
   color: var(--orange);
-  font-size: clamp(48px, 6.4vw, 118px);
-  font-weight: 700;
+  font-size: clamp(50px, 6.3vw, 120px);
   letter-spacing: .08em;
-  text-shadow:
-    0 0 4px currentColor,
-    0 0 14px currentColor;
+  text-shadow: 0 0 4px currentColor, 0 0 13px currentColor;
 }
 
-.timer-screen .round-label {
-  letter-spacing: .06em;
-}
+.footer-block { color: var(--orange); }
+.footer-mode { color: var(--muted); }
+.footer-round { color: var(--blue); }
+.footer-separator { color: #666; }
+
+.state-work .status { color: var(--green); }
+.state-work .timer { color: var(--red); }
+
+.state-rest .status, .state-rest .timer { color: var(--blue); }
+
+.state-otc .status, .state-otc .timer { color: var(--red); }
+
+.state-finished .status { color: var(--green); }
+.state-finished .timer { color: var(--white); }
+
+.state-prep .status, .state-prep .timer { color: var(--orange); }
+
+.state-paused .status { color: var(--orange); }
+.state-paused .timer { color: var(--white); }
+
+.state-idle .status { color: var(--orange); }
+.state-idle .timer { color: var(--white); }
