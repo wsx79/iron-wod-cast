@@ -228,19 +228,19 @@ html, body {
 .timer-screen.has-interval .interval-badge {
   display: flex !important;
   position: absolute !important;
-  left: .1vw !important;
+  left: .5vw !important;
   top: 50% !important;
   width: 16vw !important;
   height: 45vh !important;
   transform: translateY(-50%) !important;
+  align-items: center !important;
   justify-content: center !important;
-  align-items: flex-start !important;
 }
 
 .timer-screen.has-interval .interval-number {
   color: var(--red) !important;
   font-family: "Courier New", monospace !important;
-  font-size: clamp(150px, 20vw, 340px) !important;
+  font-size: clamp(150px, 18vw, 340px) !important;
   line-height: .82 !important;
   font-weight: 700 !important;
   letter-spacing: -.04em !important;
@@ -257,8 +257,8 @@ html, body {
 }
 
 .timer-screen.has-interval .led-char {
-  width: min(20vw, 34vh) !important;
-  height: min(38vw, 54vh) !important;
+  width: min(21vw, 35vh) !important;
+  height: min(39vw, 55vh) !important;
 }
 
 .timer-screen.has-interval .led-colon {
@@ -356,4 +356,50 @@ html, body {
 
 .timer-screen.has-interval.state-paused .status {
   color: var(--orange) !important;
+}
+
+
+/* ================================================================
+   LED v10 — Structured Intervals footer + centered states
+   ================================================================ */
+
+/* Bottom metadata: gray, readable, still secondary. */
+.timer-screen.has-interval .footer.intervals-total-footer {
+  left: 1vw !important;
+  right: 1vw !important;
+  bottom: .8vh !important;
+  width: auto !important;
+  text-align: center !important;
+  color: var(--muted) !important;
+  font-size: clamp(34px, 3.8vw, 72px) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: .025em !important;
+}
+
+/* Preparation / pause / completed must be truly centered. */
+.timer-screen.state-prep .status,
+.timer-screen.state-paused .status,
+.timer-screen.state-finished .status {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  text-align: center !important;
+  transform: none !important;
+}
+
+/* Keep requested semantic colors. */
+.timer-screen.state-prep .status,
+.timer-screen.state-paused .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.state-finished .status {
+  color: var(--green) !important;
+}
+
+/* Finished state should not inherit an interval-side offset. */
+.timer-screen.state-finished .timer {
+  left: 2vw !important;
+  right: 2vw !important;
 }

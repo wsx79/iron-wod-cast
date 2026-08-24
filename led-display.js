@@ -164,6 +164,14 @@
     return 'state-idle';
   }
 
+  function parseTotalTime(rawFooter) {
+    const normalized = normalize(rawFooter);
+    const match = normalized.match(
+      /(?:TEMPO TOTALE|TOTAL TIME|TIEMPO TOTAL)\s+([0-9]+:[0-9]{2})/
+    );
+    return match ? match[1] : null;
+  }
+
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
     const rawFooter = sourceFooter.textContent || '';
@@ -172,6 +180,7 @@
 
     const interval = parseInterval(rawStatus);
     const round = parseRound(rawFooter);
+    const totalTime = parseTotalTime(rawFooter);
     const clean = cleanStatus(rawStatus);
 
     screen.className = `timer-screen ${visualState(rawStatus)}`;
@@ -192,15 +201,23 @@
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
-      // Bottom information = total ROUND progress.
+      // Bottom information:
+      // ROUND mode -> ROUND x/y · INTERVALLI N
+      // TIME mode  -> TEMPO TOTALE mm:ss · INTERVALLI N
       if (round) {
-        footer.textContent = `ROUND ${round.current}/${round.total}`;
+        footer.textContent =
+          `ROUND ${round.current}/${round.total}   ·   INTERVALLI ${interval.total}`;
+        footer.className = 'footer intervals-total-footer';
+        footer.classList.remove('hidden');
+      } else if (totalTime) {
+        footer.textContent =
+          `TEMPO TOTALE ${totalTime}   ·   INTERVALLI ${interval.total}`;
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
       } else {
-        footer.textContent = '';
-        footer.className = 'footer';
-        footer.classList.add('hidden');
+        footer.textContent = `INTERVALLI ${interval.total}`;
+        footer.className = 'footer intervals-total-footer';
+        footer.classList.remove('hidden');
       }
     } else {
       intervalBadge.classList.add('hidden');
