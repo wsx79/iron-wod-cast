@@ -228,13 +228,13 @@ html, body {
 .timer-screen.has-interval .interval-badge {
   display: flex !important;
   position: absolute !important;
-  left: .5vw !important;
+  left: .1vw !important;
   top: 50% !important;
   width: 16vw !important;
   height: 45vh !important;
   transform: translateY(-50%) !important;
-  align-items: center !important;
   justify-content: center !important;
+  align-items: flex-start !important;
 }
 
 .timer-screen.has-interval .interval-number {
