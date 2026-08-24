@@ -1,118 +1,269 @@
+
+:root {
+  --bg: #000;
+  --white: #f4f4f2;
+  --muted: #a8a8a8;
+  --blue: #1688ff;
+  --green: #16e33f;
+  --red: #ff2618;
+  --orange: #ff6b00;
+  --segment-off: rgba(255,255,255,0.025);
+}
+
 html, body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #000;
-  color: #fff;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
 }
+
 * { box-sizing: border-box; }
+
 .timer-screen {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
   background: #000;
-  border: 0;
-  outline: 0;
-  box-shadow: none;
 }
-.status, .timer, .footer {
+
+/* ---------- Top information ---------- */
+
+.round-label {
   position: absolute;
-  left: 1vw;
-  right: 1vw;
+  top: 4.2vh;
+  left: 4vw;
+  max-width: 36vw;
+  color: var(--blue);
+  font-family: "Courier New", monospace;
+  font-size: clamp(34px, 4.6vw, 88px);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 13px currentColor;
+}
+
+.status {
+  position: absolute;
+  top: 7vh;
+  left: 28vw;
+  right: 10vw;
   text-align: center;
-  font-weight: 900;
+  color: var(--orange);
+  font-family: "Courier New", monospace;
+  font-size: clamp(56px, 8.7vw, 164px);
+  line-height: .95;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
-  border: 0;
-  outline: 0;
-  box-shadow: none;
+  text-overflow: clip;
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 18px currentColor;
 }
-.status {
-  top: 1.2vh;
-  color: #ff6b00;
-  font-size: clamp(62px, 8.6vh, 132px);
-  line-height: 1;
-  letter-spacing: 0.10em;
-}
+
+/* ---------- Seven segment clock ---------- */
+
 .timer {
-  top: 48%;
+  position: absolute;
+  left: 5vw;
+  right: 5vw;
+  top: 46%;
+  height: min(39vw, 48vh);
   transform: translateY(-50%);
-  color: #fff;
-  font-size: clamp(235px, 38vw, 760px);
-  line-height: 0.84;
-  letter-spacing: -0.045em;
-}
-.footer {
-  bottom: 4vh;
-  color: #aaa;
-  font-size: clamp(49px, 7.2vh, 112px);
-  line-height: 1;
-  letter-spacing: 0.055em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: min(1.2vw, 18px);
+  color: var(--red);
 }
 
+.led-char {
+  position: relative;
+  width: min(17.1vw, 28vh);
+  height: min(31vw, 43vh);
+  flex: 0 0 auto;
+}
 
-/* ============================================================
-   IRON WOD CAST — semantic structured-workout additions only.
-   The original 16e01f7 fullscreen geometry above is untouched.
-   ============================================================ */
+.led-char.narrow {
+  width: min(6.2vw, 9vh);
+}
+
+.led-seg {
+  position: absolute;
+  background: var(--segment-off);
+  opacity: .11;
+}
+
+.led-seg.on {
+  background: currentColor;
+  opacity: 1;
+  filter:
+    drop-shadow(0 0 4px currentColor)
+    drop-shadow(0 0 10px currentColor);
+}
+
+/* horizontal segments */
+.led-a, .led-g, .led-d {
+  left: 18%;
+  width: 64%;
+  height: 8.5%;
+  clip-path: polygon(7% 0, 93% 0, 100% 50%, 93% 100%, 7% 100%, 0 50%);
+}
+.led-a { top: 0; }
+.led-g { top: 45.7%; }
+.led-d { bottom: 0; }
+
+/* vertical segments */
+.led-b, .led-c, .led-e, .led-f {
+  width: 13%;
+  height: 39%;
+  clip-path: polygon(50% 0, 100% 8%, 100% 92%, 50% 100%, 0 92%, 0 8%);
+}
+.led-b { top: 5.7%; right: 3.6%; }
+.led-c { bottom: 5.7%; right: 3.6%; }
+.led-e { bottom: 5.7%; left: 3.6%; }
+.led-f { top: 5.7%; left: 3.6%; }
+
+.led-colon {
+  position: relative;
+  width: min(5.4vw, 8vh);
+  height: min(31vw, 43vh);
+  flex: 0 0 auto;
+}
+
+.led-colon::before,
+.led-colon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: min(2.0vw, 3.2vh);
+  height: min(2.0vw, 3.2vh);
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+  filter:
+    drop-shadow(0 0 4px currentColor)
+    drop-shadow(0 0 10px currentColor);
+}
+.led-colon::before { top: 30%; }
+.led-colon::after { bottom: 30%; }
+
+/* ---------- Time cap + bottom ---------- */
 
 .time-cap {
   position: absolute;
-  top: 1.2vh;
-  right: 1.4vw;
-  max-width: 38vw;
-  color: #ff6b00;
-  font-size: clamp(25px, 3.4vh, 52px);
+  left: 10vw;
+  right: 10vw;
+  top: 72.5vh;
+  text-align: center;
+  color: var(--white);
+  font-family: "Courier New", monospace;
+  font-size: clamp(28px, 3.4vw, 66px);
+  font-weight: 700;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(255,255,255,.5);
+}
+
+.footer {
+  position: absolute;
+  left: 7vw;
+  right: 7vw;
+  bottom: 5vh;
+  text-align: center;
+  font-family: "Courier New", monospace;
+  font-size: clamp(28px, 3.7vw, 72px);
   line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.055em;
-  text-align: right;
+  font-weight: 700;
+  letter-spacing: .045em;
+  text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
-  border: 0;
-  outline: 0;
-  box-shadow: none;
 }
 
-.hidden {
-  visibility: hidden;
-}
-
-/* Structured footer:
-   ROUND = blue
-   mode (FOR TIME / AMRAP / EMOM...) = grey
-   BLOCK = orange
-   It intentionally inherits the original .footer size/position. */
 .footer .footer-part {
   display: inline;
   font: inherit;
-  font-size: 0.96em;
   line-height: inherit;
   letter-spacing: inherit;
 }
 
-.footer .footer-separator {
-  color: #666;
+.footer .footer-separator { color: #666; }
+.footer .footer-round { color: var(--blue); }
+.footer .footer-mode { color: var(--muted); }
+.footer .footer-block { color: var(--orange); }
+
+.hidden { visibility: hidden; }
+
+/* ---------- Semantic state colors ---------- */
+
+.timer-screen.state-work .status { color: var(--green); }
+.timer-screen.state-work .timer { color: var(--red); }
+
+.timer-screen.state-rest .status { color: var(--blue); }
+.timer-screen.state-rest .timer { color: var(--blue); }
+
+.timer-screen.state-otc .status { color: var(--red); }
+.timer-screen.state-otc .timer { color: var(--red); }
+
+.timer-screen.state-finished .status { color: var(--green); }
+.timer-screen.state-finished .timer { color: var(--white); }
+
+.timer-screen.state-prep .status { color: var(--orange); }
+.timer-screen.state-prep .timer { color: var(--orange); }
+
+.timer-screen.state-paused .status { color: var(--orange); }
+.timer-screen.state-paused .timer { color: var(--white); }
+
+.timer-screen.state-idle .status { color: var(--orange); }
+.timer-screen.state-idle .timer { color: var(--white); }
+
+/* A single preparation digit should not look tiny. */
+.timer.single-digit {
+  height: min(34vw, 52vh);
 }
 
-.footer .footer-round {
-  color: #2196f3;
-}
+/* TV safe-area tweaks for 4:3 / unusual output modes. */
+@media (max-aspect-ratio: 4/3) {
+  .round-label {
+    top: 3vh;
+    left: 3vw;
+    font-size: clamp(28px, 4vw, 66px);
+  }
 
-.footer .footer-mode {
-  color: #aaa;
-}
+  .status {
+    top: 8vh;
+    left: 25vw;
+    right: 4vw;
+    font-size: clamp(48px, 7vw, 110px);
+  }
 
-.footer .footer-block {
-  color: #ff6b00;
-}
+  .timer {
+    top: 47%;
+    left: 2vw;
+    right: 2vw;
+    height: min(36vw, 44vh);
+    gap: .7vw;
+  }
 
+  .led-char {
+    width: min(16.5vw, 25vh);
+    height: min(30vw, 40vh);
+  }
 
-/* For Time / structured footer refinement: ROUND is intentionally more prominent. */
-.footer .footer-round {
-  font-size: 1.14em;
+  .time-cap { top: 73vh; }
+  .footer { bottom: 4vh; }
 }

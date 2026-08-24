@@ -6,6 +6,8 @@
   const timerEl = document.getElementById('timerText');
   const footerEl = document.getElementById('footerText');
   const timeCapEl = document.getElementById('timeCapText');
+  const roundEl = document.getElementById('roundText');
+  const screenEl = document.getElementById('timerScreen');
 
   let lastStatus = '';
   let lastTimer = '';
@@ -387,7 +389,10 @@
     const status = normalizeStatus(statusText);
     const prev = normalizeStatus(lastStatus);
     const timer = String(timerText || '').trim();
-    const mode = String(audioMode || 'SOUNDS').trim().toUpperCase();
+    const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
+    const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(rawMode)
+      ? rawMode
+      : 'SOUNDS';
     const normalizedLanguage = normalizeLanguage(voiceLanguage);
 
     if (mode !== lastAudioMode || normalizedLanguage !== lastVoiceLanguage) {
@@ -474,6 +479,97 @@
     lastTimer = timer;
   }
 
+  const LED_SEGMENTS = Object.freeze({
+    '0': ['a', 'b', 'c', 'd', 'e', 'f'],
+    '1': ['b', 'c'],
+    '2': ['a', 'b', 'g', 'e', 'd'],
+    '3': ['a', 'b', 'c', 'd', 'g'],
+    '4': ['f', 'g', 'b', 'c'],
+    '5': ['a', 'f', 'g', 'c', 'd'],
+    '6': ['a', 'f', 'g', 'e', 'c', 'd'],
+    '7': ['a', 'b', 'c'],
+    '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+    '9': ['a', 'b', 'c', 'd', 'f', 'g']
+  });
+
+  function renderLedTimer(value) {
+    const raw = String(value || '').trim();
+    timerEl.textContent = '';
+    timerEl.setAttribute('aria-label', raw);
+    timerEl.classList.toggle('single-digit', /^\d$/.test(raw));
+
+    for (const ch of raw) {
+      if (ch === ':') {
+        const colon = document.createElement('span');
+        colon.className = 'led-colon';
+        timerEl.appendChild(colon);
+        continue;
+      }
+
+      if (!/^\d$/.test(ch)) {
+        // Rare non-numeric final state: keep it readable instead of breaking layout.
+        timerEl.textContent = raw;
+        timerEl.style.fontFamily = '"Courier New", monospace';
+        timerEl.style.fontSize = 'clamp(150px, 22vw, 430px)';
+        timerEl.style.fontWeight = '700';
+        timerEl.style.letterSpacing = '.03em';
+        return;
+      }
+
+      const digit = document.createElement('span');
+      digit.className = 'led-char';
+      const active = new Set(LED_SEGMENTS[ch]);
+
+      for (const seg of ['a', 'b', 'c', 'd', 'e', 'f', 'g']) {
+        const node = document.createElement('span');
+        node.className = `led-seg led-${seg}${active.has(seg) ? ' on' : ''}`;
+        digit.appendChild(node);
+      }
+      timerEl.appendChild(digit);
+    }
+  }
+
+  function classifyVisualState(statusText) {
+    const value = normalizeStatus(statusText);
+
+    if (
+      value === 'OTC' ||
+      value.includes('OVER TIME CAP') ||
+      value.includes('OLTRE TIME CAP')
+    ) return 'state-otc';
+
+    if (isFinishStatus(value)) return 'state-finished';
+    if (isRestStatus(value)) return 'state-rest';
+
+    if (
+      value.includes('PREPAR') ||
+      value.includes('GET READY') ||
+      value === 'PREP'
+    ) return 'state-prep';
+
+    if (
+      value.includes('PAUSA') ||
+      value.includes('PAUSED')
+    ) return 'state-paused';
+
+    if (isActiveWorkStatus(value)) return 'state-work';
+    return 'state-idle';
+  }
+
+  function applyVisualState(statusText) {
+    const states = [
+      'state-idle',
+      'state-work',
+      'state-rest',
+      'state-otc',
+      'state-finished',
+      'state-prep',
+      'state-paused'
+    ];
+    screenEl.classList.remove(...states);
+    screenEl.classList.add(classifyVisualState(statusText));
+  }
+
   function resolveStatusAndTimeCap(data) {
     const rawStatus = String(data.statusText || '');
     const parts = rawStatus.split('•').map(part => part.trim()).filter(Boolean);
@@ -521,6 +617,8 @@
     const raw = String(footerText || '').trim();
 
     if (!raw) {
+      roundEl.textContent = '';
+      roundEl.classList.add('hidden');
       footerEl.textContent = 'TIMER';
       return;
     }
@@ -530,13 +628,29 @@
       .map(part => part.trim())
       .filter(Boolean);
 
+    const roundParts = parts.filter(part => classifyFooterPart(part) === 'footer-round');
+    const bottomParts = parts.filter(part => classifyFooterPart(part) !== 'footer-round');
+
+    if (roundParts.length > 0) {
+      roundEl.textContent = roundParts[0];
+      roundEl.classList.remove('hidden');
+    } else {
+      roundEl.textContent = '';
+      roundEl.classList.add('hidden');
+    }
+
+    if (bottomParts.length === 0) {
+      footerEl.textContent = '';
+      return;
+    }
+
     footerEl.textContent = '';
 
-    parts.forEach((part, index) => {
+    bottomParts.forEach((part, index) => {
       if (index > 0) {
         const separator = document.createElement('span');
         separator.className = 'footer-part footer-separator';
-        separator.textContent = '  •  ';
+        separator.textContent = '  |  ';
         footerEl.appendChild(separator);
       }
 
@@ -545,18 +659,6 @@
       span.textContent = part;
       footerEl.appendChild(span);
     });
-  }
-
-  function compactCompletionStatus(value) {
-    const raw = String(value || '').trim();
-    const normalized = normalizeStatus(raw);
-
-    if (normalized.startsWith('COMPLETATO ENTRO TIME CAP')) return 'COMPLETATO';
-    if (normalized.startsWith('COMPLETED WITHIN TIME CAP')) return 'COMPLETED';
-    if (normalized.startsWith('COMPLETADO DENTRO DEL TIME CAP')) return 'COMPLETADO';
-    if (normalized.startsWith('COMPLETADO DENTRO DEL TIEMPO')) return 'COMPLETADO';
-
-    return raw;
   }
 
   function updateTimer(data) {
@@ -573,11 +675,17 @@
     );
 
     statusEl.textContent = statusText;
-    timerEl.textContent = timerText;
+    renderLedTimer(timerText);
+    applyVisualState(statusText);
     renderFooter(footerText);
 
-    timeCapEl.textContent = resolved.timeCapText;
-    timeCapEl.classList.toggle('hidden', !resolved.timeCapText);
+    const capRaw = String(resolved.timeCapText || '').trim();
+    const capDisplay =
+      capRaw && !normalizeStatus(capRaw).startsWith('TIME CAP')
+        ? `TIME CAP ${capRaw}`
+        : capRaw;
+    timeCapEl.textContent = capDisplay;
+    timeCapEl.classList.toggle('hidden', !capDisplay);
 
     const normalizedStatus = normalizeStatus(statusText);
     const isConfiguration =
@@ -591,10 +699,13 @@
 
   function clearTimer() {
     statusEl.textContent = 'IRON WOD';
-    timerEl.textContent = '00:00';
+    renderLedTimer('00:00');
     footerEl.textContent = 'TIMER';
+    roundEl.textContent = '';
+    roundEl.classList.add('hidden');
     timeCapEl.textContent = '';
     timeCapEl.classList.add('hidden');
+    applyVisualState('IRON WOD');
     statusEl.style.color = '#ff6b00';
     stopVoiceAudio();
     stopSoundAudio();
@@ -605,6 +716,9 @@
     lastVoiceLanguage = '';
   }
 
+
+  renderLedTimer('00:00');
+  applyVisualState('IRON WOD');
 
   primeAudioPipeline();
 
@@ -630,8 +744,18 @@
     }
 
     if (!data || typeof data !== 'object') return;
-    if (data.type === 'timer') updateTimer(data);
-    if (data.type === 'clear') clearTimer();
+
+    if (data.type === 'timer') {
+      if (typeof data.timerText !== 'string') {
+        console.warn('[IRON WOD protocol] invalid timer payload: timerText missing or not a string');
+        return;
+      }
+      updateTimer(data);
+    }
+
+    if (data.type === 'clear') {
+      clearTimer();
+    }
   });
 
   context.addEventListener(
