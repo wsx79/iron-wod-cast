@@ -205,19 +205,24 @@
       // ROUND mode -> ROUND x/y · INTERVALLI N
       // TIME mode  -> TEMPO TOTALE mm:ss · INTERVALLI N
       if (round) {
-        footer.textContent =
-          `ROUND ${round.current}/${round.total}   ·   INTERVALLI ${interval.total}`;
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
+        footer.innerHTML =
+          `<span class="intervals-primary">ROUND ${round.current}/${round.total}</span>` +
+          `<span class="intervals-separator"> · </span>` +
+          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
       } else if (totalTime) {
-        footer.textContent =
-          `TEMPO TOTALE ${totalTime}   ·   INTERVALLI ${interval.total}`;
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
+        footer.innerHTML =
+          `<span class="intervals-primary">TEMPO TOTALE ${totalTime}</span>` +
+          `<span class="intervals-separator"> · </span>` +
+          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
       } else {
-        footer.textContent = `INTERVALLI ${interval.total}`;
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
+        footer.innerHTML =
+          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
       }
     } else {
       intervalBadge.classList.add('hidden');

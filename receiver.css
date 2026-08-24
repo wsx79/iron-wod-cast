@@ -403,3 +403,37 @@ html, body {
   left: 2vw !important;
   right: 2vw !important;
 }
+
+
+/* ================================================================
+   LED v11 — final Structured Intervals spacing/color micro-fix
+   ================================================================ */
+
+/* Red 01/02/03 almost flush with the left edge. */
+.timer-screen.has-interval .interval-badge {
+  left: -0.35vw !important;
+}
+
+/* Tighter spacing around the colon in the main white/blue clock. */
+.timer-screen.has-interval .timer {
+  gap: min(.12vw, 2px) !important;
+}
+
+.timer-screen.has-interval .led-colon {
+  width: min(3.25vw, 5.1vh) !important;
+}
+
+/* Footer uses semantic colors:
+   ROUND/TEMPO TOTALE = aqua, INTERVALLI = red. */
+.timer-screen.has-interval .footer.intervals-total-footer .intervals-primary {
+  color: #38d9d0 !important;
+}
+
+.timer-screen.has-interval .footer.intervals-total-footer .intervals-count {
+  color: var(--red) !important;
+}
+
+.timer-screen.has-interval .footer.intervals-total-footer .intervals-separator {
+  color: var(--muted) !important;
+  padding: 0 .35em;
+}
