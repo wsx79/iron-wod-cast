@@ -495,6 +495,10 @@
   function renderLedTimer(value) {
     const raw = String(value || '').trim();
     timerEl.textContent = '';
+    timerEl.style.fontFamily = '';
+    timerEl.style.fontSize = '';
+    timerEl.style.fontWeight = '';
+    timerEl.style.letterSpacing = '';
     timerEl.setAttribute('aria-label', raw);
     timerEl.classList.toggle('single-digit', /^\d$/.test(raw));
 
@@ -568,6 +572,30 @@
     ];
     screenEl.classList.remove(...states);
     screenEl.classList.add(classifyVisualState(statusText));
+  }
+
+  function extractStructuredPhase(statusText) {
+    const raw = String(statusText || '').trim();
+    const normalized = normalizeStatus(raw);
+
+    const match = normalized.match(/(?:FASE|PHASE)\s+(\d+)\s*\/\s*(\d+)/);
+    if (!match) {
+      return {
+        isStructuredPhase: false,
+        phaseFraction: '',
+        baseStatus: raw
+      };
+    }
+
+    const baseStatus = raw
+      .split('·')[0]
+      .trim();
+
+    return {
+      isStructuredPhase: true,
+      phaseFraction: `${match[1]}/${match[2]}`,
+      baseStatus: baseStatus || raw
+    };
   }
 
   function resolveStatusAndTimeCap(data) {
@@ -661,9 +689,25 @@
     });
   }
 
+  function compactCompletionStatus(value) {
+    const raw = String(value || '').trim();
+    const normalized = normalizeStatus(raw);
+
+    if (normalized.startsWith('COMPLETATO ENTRO TIME CAP')) return 'COMPLETATO';
+    if (normalized.startsWith('COMPLETED WITHIN TIME CAP')) return 'COMPLETED';
+    if (normalized.startsWith('COMPLETADO DENTRO DEL TIME CAP')) return 'COMPLETADO';
+    if (normalized.startsWith('COMPLETADO DENTRO DEL TIEMPO')) return 'COMPLETADO';
+
+    return raw;
+  }
+
   function updateTimer(data) {
     const resolved = resolveStatusAndTimeCap(data);
-    const statusText = compactCompletionStatus(resolved.statusText);
+    const fullStatusText = compactCompletionStatus(resolved.statusText);
+    const structuredPhase = extractStructuredPhase(fullStatusText);
+    const statusText = structuredPhase.isStructuredPhase
+      ? structuredPhase.baseStatus
+      : fullStatusText;
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
 
@@ -677,7 +721,16 @@
     statusEl.textContent = statusText;
     renderLedTimer(timerText);
     applyVisualState(statusText);
-    renderFooter(footerText);
+
+    if (structuredPhase.isStructuredPhase) {
+      roundEl.textContent = structuredPhase.phaseFraction;
+      roundEl.classList.remove('hidden');
+      footerEl.textContent = 'FASE';
+      footerEl.classList.add('phase-footer');
+    } else {
+      footerEl.classList.remove('phase-footer');
+      renderFooter(footerText);
+    }
 
     const capRaw = String(resolved.timeCapText || '').trim();
     const capDisplay =
@@ -701,6 +754,7 @@
     statusEl.textContent = 'IRON WOD';
     renderLedTimer('00:00');
     footerEl.textContent = 'TIMER';
+    footerEl.classList.remove('phase-footer');
     roundEl.textContent = '';
     roundEl.classList.add('hidden');
     timeCapEl.textContent = '';
