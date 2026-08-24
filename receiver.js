@@ -563,34 +563,49 @@
     return raw;
   }
 
-  function maybePlayIntervalAlert(footerText, audioMode) {
+  function maybePlayRoundAlert(statusText, footerText, audioMode) {
     const modeRaw = String(audioMode || 'SOUNDS').trim().toUpperCase();
     const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(modeRaw)
       ? modeRaw
       : 'SOUNDS';
 
-    const normalized = normalizeStatus(footerText);
-    const match = normalized.match(
+    const combined = normalizeStatus(`${statusText || ''} ${footerText || ''}`);
+
+    const roundMatch = combined.match(
+      /(?:ROUND|RONDA)\s+(\d+)\s*\/\s*(\d+)/
+    );
+    const legacyIntervalMatch = combined.match(
       /(?:INTERVALLO\s+(\d+)\s+DI\s+(\d+)|INTERVAL\s+(\d+)\s+OF\s+(\d+)|INTERVALO\s+(\d+)\s+DE\s+(\d+))/
     );
 
-    if (!match) {
+    let current = '';
+    let total = '';
+
+    if (roundMatch) {
+      current = roundMatch[1];
+      total = roundMatch[2];
+    } else if (legacyIntervalMatch) {
+      current =
+        legacyIntervalMatch[1] ||
+        legacyIntervalMatch[3] ||
+        legacyIntervalMatch[5];
+      total =
+        legacyIntervalMatch[2] ||
+        legacyIntervalMatch[4] ||
+        legacyIntervalMatch[6];
+    } else {
       lastIntervalAlertKey = '';
       return;
     }
 
-    const current = match[1] || match[3] || match[5];
-    const total = match[2] || match[4] || match[6];
     const key = `${current}/${total}`;
-
     if (key === lastIntervalAlertKey) return;
-    lastIntervalAlertKey = key;
 
+    lastIntervalAlertKey = key;
     if (mode === 'SILENT') return;
 
-    // Dedicated short alert for every configured interval step.
-    // Uses the receiver's already-primed WebAudio context, so it does not
-    // depend on a second HTMLAudio element or autoplay permission.
+    // One short, reliable alert every time the active round/step changes,
+    // including WORK -> WORK transitions.
     tone(1180, 120, 0.20);
   }
 
@@ -607,7 +622,8 @@
       data.voiceLanguage || 'it'
     );
 
-    maybePlayIntervalAlert(
+    maybePlayRoundAlert(
+      statusText,
       footerText,
       data.audioMode || 'SOUNDS'
     );

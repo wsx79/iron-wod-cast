@@ -399,3 +399,158 @@ html, body {
 .timer-screen.has-interval.state-paused .timer {
   color: var(--white) !important;
 }
+
+
+/* ================================================================
+   LED v4 — unified timer language for every Cast timer
+   ================================================================ */
+
+/* Legacy interval number column is retired. */
+.interval-badge {
+  display: none !important;
+}
+
+/* Shared top status line. Dynamic state and round sit side by side. */
+.timer-screen .status {
+  top: 1.8vh;
+  left: 8vw;
+  right: 50vw;
+  text-align: right;
+  font-size: clamp(58px, 7.8vw, 148px);
+  line-height: .95;
+}
+
+.timer-screen .top-counter {
+  top: 1.8vh;
+  left: 52vw;
+  right: 5vw;
+  max-width: none;
+  text-align: left;
+  color: var(--blue);
+  font-size: clamp(44px, 5.2vw, 100px);
+  line-height: 1;
+}
+
+/* If there is no dynamic status (AMRAP / FOR TIME / COUNTDOWN / COUNT UP),
+   a useful round counter can occupy the top line by itself. */
+.timer-screen.status-hidden.has-round .top-counter {
+  left: 5vw;
+  right: 5vw;
+  text-align: center;
+}
+
+/* Configuration stays small and out of the way. */
+.timer-screen.state-config .status {
+  top: 1.6vh;
+  left: 47vw;
+  right: 2.5vw;
+  text-align: right;
+  font-size: clamp(25px, 3.4vw, 65px);
+}
+
+/* Main clock uses one consistent geometry across all timer types. */
+.timer-screen .timer,
+.timer-screen.has-round .timer,
+.timer-screen.has-interval .timer {
+  left: 2vw !important;
+  right: 2vw !important;
+  top: 49%;
+  height: min(36vw, 50vh);
+  gap: min(.5vw, 8px);
+}
+
+.timer-screen .led-char,
+.timer-screen.has-round .led-char,
+.timer-screen.has-interval .led-char {
+  width: min(19vw, 31.5vh);
+  height: min(35vw, 48vh);
+}
+
+.timer-screen .led-colon,
+.timer-screen.has-round .led-colon,
+.timer-screen.has-interval .led-colon {
+  width: min(4.6vw, 7.2vh);
+  height: min(35vw, 48vh);
+}
+
+/* Normal running clocks are white. Status carries the semantic color. */
+.timer-screen.state-work .timer,
+.timer-screen.state-rest .timer,
+.timer-screen.state-paused .timer,
+.timer-screen.state-idle .timer {
+  color: var(--white) !important;
+}
+
+.timer-screen.state-work .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.state-rest .status {
+  color: var(--blue) !important;
+}
+
+.timer-screen.state-paused .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.state-prep .status,
+.timer-screen.state-prep .timer {
+  color: var(--orange) !important;
+}
+
+.timer-screen.state-otc .status,
+.timer-screen.state-otc .timer {
+  color: var(--red) !important;
+}
+
+.timer-screen.state-finished .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.state-finished .timer {
+  color: var(--white) !important;
+}
+
+/* Footer is only for genuinely useful secondary information (e.g. BLOCK).
+   Static mode labels are filtered out by led-display.js. */
+.timer-screen .footer {
+  bottom: 4vh;
+  font-size: clamp(28px, 3.5vw, 68px);
+}
+
+/* Time cap uses the same position on every timer. */
+.timer-screen .time-cap,
+.timer-screen.has-round .time-cap,
+.timer-screen.has-interval .time-cap {
+  top: 76vh;
+  left: 8vw;
+  right: 8vw;
+  font-size: clamp(27px, 3.2vw, 62px);
+}
+
+/* Static-mode timers have no useless orange heading: the clock gets the screen. */
+.timer-screen.status-hidden:not(.has-round) .timer {
+  top: 48%;
+}
+
+/* TV-safe fallback. */
+@media (max-aspect-ratio: 4/3) {
+  .timer-screen .status {
+    left: 4vw;
+    right: 50vw;
+    font-size: clamp(44px, 6.5vw, 108px);
+  }
+
+  .timer-screen .top-counter {
+    left: 52vw;
+    right: 3vw;
+    font-size: clamp(34px, 4.5vw, 76px);
+  }
+
+  .timer-screen .timer,
+  .timer-screen.has-round .timer,
+  .timer-screen.has-interval .timer {
+    left: 1vw !important;
+    right: 1vw !important;
+  }
+}
