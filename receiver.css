@@ -210,428 +210,28 @@ html, body {
 
 
 /* ================================================================
-   Structured Intervals — TV LED layout v2
+   SAFE INTERVALS OVERRIDE v7
    ================================================================ */
 
-/* Configuration text: deliberately smaller and farther right so it
-   never collides with left-side counters / footer information. */
-.state-config .status {
-  top: 4.2vh;
-  left: 42vw;
-  right: 5vw;
-  text-align: right;
-  font-size: clamp(30px, 4.2vw, 78px);
-  letter-spacing: .035em;
-}
-
-/* Active interval number displayed like a gym timer channel/round
-   counter, but semantically it is the configured interval step. */
-.interval-badge {
-  position: absolute;
-  left: 3.3vw;
-  top: 37%;
-  width: 15vw;
-  height: 38vh;
-  transform: translateY(-30%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.interval-number {
-  color: var(--red);
-  font-family: "Courier New", monospace;
-  font-size: clamp(92px, 12vw, 230px);
-  line-height: .88;
-  font-weight: 700;
-  letter-spacing: -.04em;
-  text-shadow:
-    0 0 5px currentColor,
-    0 0 16px currentColor;
-}
-
-.interval-label {
-  margin-top: 3vh;
-  color: var(--orange);
-  font-family: "Courier New", monospace;
-  font-size: clamp(25px, 2.7vw, 54px);
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: .04em;
-  white-space: nowrap;
-  text-shadow: 0 0 4px rgba(255,107,0,.8);
-}
-
-/* When an interval badge is active, shift the main timer slightly
-   right so the red 01/02/03 counter has its own clear column. */
-.timer-screen.has-interval .timer {
-  left: 19vw;
-  right: 3vw;
-}
-
-/* Main countdown digits are white for both WORK and REST. */
-.timer-screen.has-interval.state-work .timer,
-.timer-screen.has-interval.state-rest .timer {
-  color: var(--white);
-}
-
-/* WORK / REST retain their semantic status colors. */
-.timer-screen.has-interval.state-work .status {
-  color: var(--green);
-}
-
-.timer-screen.has-interval.state-rest .status {
-  color: var(--blue);
-}
-
-/* In active structured intervals the large bottom footer is not used:
-   INTERVALLO lives directly under the red interval number. */
-.timer-screen.has-interval .footer {
-  visibility: hidden;
-}
-
-/* Keep time cap readable in the free space below the main timer. */
-.timer-screen.has-interval .time-cap {
-  top: 75vh;
-}
-
-/* Smaller TVs / 4:3 mirroring fallback. */
-@media (max-aspect-ratio: 4/3) {
-  .interval-badge {
-    left: 1.5vw;
-    width: 18vw;
-  }
-
-  .interval-number {
-    font-size: clamp(72px, 10vw, 160px);
-  }
-
-  .interval-label {
-    font-size: clamp(20px, 2.2vw, 38px);
-  }
-
-  .timer-screen.has-interval .timer {
-    left: 20vw;
-    right: 1.5vw;
-  }
-}
-
-
-/* ================================================================
-   LED display v3 — tighter top status, larger timer/counter
-   ================================================================ */
-
-/* WORK / REST / PAUSA sit close to the TV's top safe edge. */
-.timer-screen.has-interval.state-work .status,
-.timer-screen.has-interval.state-rest .status,
-.timer-screen.has-interval.state-paused .status {
-  top: 1.8vh;
-  left: 21vw;
-  right: 2.5vw;
-  text-align: center;
-  font-size: clamp(64px, 8.8vw, 168px);
-}
-
-/* Force semantic colors even if older rules are cached. */
-.timer-screen.has-interval.state-work .status {
-  color: var(--green) !important;
-}
-
-.timer-screen.has-interval.state-rest .status {
-  color: var(--blue) !important;
-}
-
-.timer-screen.has-interval.state-paused .status {
-  color: var(--orange) !important;
-}
-
-/* Configuration is smaller and right aligned. */
-.timer-screen.state-config .status {
-  top: 1.8vh;
-  left: 48vw;
-  right: 2.8vw;
-  text-align: right;
-  font-size: clamp(26px, 3.5vw, 68px);
-}
-
-/* Bigger current interval number, without any text label below it. */
-.timer-screen.has-interval .interval-badge {
-  left: 0.8vw;
-  top: 47%;
-  width: 15.5vw;
-  height: 38vh;
-  transform: translateY(-50%);
-}
-
-.timer-screen.has-interval .interval-number {
-  font-size: clamp(135px, 16.5vw, 315px);
-  line-height: .82;
-}
-
-.timer-screen.has-interval .interval-label {
-  display: none !important;
-}
-
-/* Larger main timer, still leaving a dedicated left column for 01/02/03. */
-.timer-screen.has-interval .timer {
-  left: 16.3vw;
-  right: 0.8vw;
-  top: 49%;
-  height: min(34vw, 47vh);
-  gap: min(.55vw, 9px);
-}
-
-.timer-screen.has-interval .led-char {
-  width: min(18vw, 30vh);
-  height: min(33vw, 46vh);
-}
-
-.timer-screen.has-interval .led-colon {
-  width: min(4.7vw, 7.4vh);
-  height: min(33vw, 46vh);
-}
-
-/* Active WORK/REST timer digits are always white. */
-.timer-screen.has-interval.state-work .timer,
-.timer-screen.has-interval.state-rest .timer,
-.timer-screen.has-interval.state-paused .timer {
-  color: var(--white) !important;
-}
-
-
-/* ================================================================
-   LED v4 — unified timer language for every Cast timer
-   ================================================================ */
-
-/* Legacy interval number column is retired. */
-.interval-badge {
-  display: none !important;
-}
-
-/* Shared top status line. Dynamic state and round sit side by side. */
-.timer-screen .status {
-  top: 1.8vh;
-  left: 8vw;
-  right: 50vw;
-  text-align: right;
-  font-size: clamp(58px, 7.8vw, 148px);
-  line-height: .95;
-}
-
-.timer-screen .top-counter {
-  top: 1.8vh;
-  left: 52vw;
-  right: 5vw;
-  max-width: none;
-  text-align: left;
-  color: var(--blue);
-  font-size: clamp(44px, 5.2vw, 100px);
-  line-height: 1;
-}
-
-/* If there is no dynamic status (AMRAP / FOR TIME / COUNTDOWN / COUNT UP),
-   a useful round counter can occupy the top line by itself. */
-.timer-screen.status-hidden.has-round .top-counter {
-  left: 5vw;
-  right: 5vw;
-  text-align: center;
-}
-
-/* Configuration stays small and out of the way. */
-.timer-screen.state-config .status {
-  top: 1.6vh;
-  left: 47vw;
-  right: 2.5vw;
-  text-align: right;
-  font-size: clamp(25px, 3.4vw, 65px);
-}
-
-/* Main clock uses one consistent geometry across all timer types. */
-.timer-screen .timer,
-.timer-screen.has-round .timer,
-.timer-screen.has-interval .timer {
-  left: 2vw !important;
-  right: 2vw !important;
-  top: 49%;
-  height: min(36vw, 50vh);
-  gap: min(.5vw, 8px);
-}
-
-.timer-screen .led-char,
-.timer-screen.has-round .led-char,
-.timer-screen.has-interval .led-char {
-  width: min(19vw, 31.5vh);
-  height: min(35vw, 48vh);
-}
-
-.timer-screen .led-colon,
-.timer-screen.has-round .led-colon,
-.timer-screen.has-interval .led-colon {
-  width: min(4.6vw, 7.2vh);
-  height: min(35vw, 48vh);
-}
-
-/* Normal running clocks are white. Status carries the semantic color. */
-.timer-screen.state-work .timer,
-.timer-screen.state-rest .timer,
-.timer-screen.state-paused .timer,
-.timer-screen.state-idle .timer {
-  color: var(--white) !important;
-}
-
-.timer-screen.state-work .status {
-  color: var(--green) !important;
-}
-
-.timer-screen.state-rest .status {
-  color: var(--blue) !important;
-}
-
-.timer-screen.state-paused .status {
-  color: var(--orange) !important;
-}
-
-.timer-screen.state-prep .status,
-.timer-screen.state-prep .timer {
-  color: var(--orange) !important;
-}
-
-.timer-screen.state-otc .status,
-.timer-screen.state-otc .timer {
-  color: var(--red) !important;
-}
-
-.timer-screen.state-finished .status {
-  color: var(--green) !important;
-}
-
-.timer-screen.state-finished .timer {
-  color: var(--white) !important;
-}
-
-/* Footer is only for genuinely useful secondary information (e.g. BLOCK).
-   Static mode labels are filtered out by led-display.js. */
-.timer-screen .footer {
-  bottom: 4vh;
-  font-size: clamp(28px, 3.5vw, 68px);
-}
-
-/* Time cap uses the same position on every timer. */
-.timer-screen .time-cap,
-.timer-screen.has-round .time-cap,
-.timer-screen.has-interval .time-cap {
-  top: 76vh;
-  left: 8vw;
-  right: 8vw;
-  font-size: clamp(27px, 3.2vw, 62px);
-}
-
-/* Static-mode timers have no useless orange heading: the clock gets the screen. */
-.timer-screen.status-hidden:not(.has-round) .timer {
-  top: 48%;
-}
-
-/* TV-safe fallback. */
-@media (max-aspect-ratio: 4/3) {
-  .timer-screen .status {
-    left: 4vw;
-    right: 50vw;
-    font-size: clamp(44px, 6.5vw, 108px);
-  }
-
-  .timer-screen .top-counter {
-    left: 52vw;
-    right: 3vw;
-    font-size: clamp(34px, 4.5vw, 76px);
-  }
-
-  .timer-screen .timer,
-  .timer-screen.has-round .timer,
-  .timer-screen.has-interval .timer {
-    left: 1vw !important;
-    right: 1vw !important;
-  }
-}
-
-
-/* ================================================================
-   LED v5 — Structured Intervals only
-   ================================================================ */
-
-/* Make the main interval clock even larger. */
-.timer-screen.has-round.state-work .timer,
-.timer-screen.has-round.state-rest .timer {
-  left: 0.7vw !important;
-  right: 0.7vw !important;
-  top: 50%;
-  height: min(39vw, 54vh);
-}
-
-.timer-screen.has-round.state-work .led-char,
-.timer-screen.has-round.state-rest .led-char {
-  width: min(20.5vw, 34vh);
-  height: min(38vw, 53vh);
-}
-
-.timer-screen.has-round.state-work .led-colon,
-.timer-screen.has-round.state-rest .led-colon {
-  width: min(4.4vw, 6.8vh);
-  height: min(38vw, 53vh);
-}
-
-/* WORK countdown stays white. */
-.timer-screen.has-round.state-work .timer {
-  color: var(--white) !important;
-}
-
-/* REST stays blue: both label and timer. */
-.timer-screen.has-round.state-rest .status,
-.timer-screen.has-round.state-rest .timer {
-  color: var(--blue) !important;
-}
-
-/* Small informational line aligned with the bottom safe edge. */
-.timer-screen .footer.intervals-total-footer {
-  left: 3vw;
-  right: 3vw;
-  bottom: 1.2vh;
-  text-align: center;
-  color: var(--muted);
-  font-size: clamp(20px, 2.2vw, 42px);
-  font-weight: 700;
-  letter-spacing: .035em;
-  line-height: 1;
-  text-shadow: none;
-}
-
-
-/* ================================================================
-   LED v6 — Structured Intervals: restore approved red round counter
-   ================================================================ */
-
-/* Intervals: no blue ROUND at top. */
 .timer-screen.has-interval .top-counter {
   display: none !important;
 }
 
-/* State only, aligned close to top edge. */
 .timer-screen.has-interval .status {
   top: 1.2vh !important;
-  left: 18vw !important;
-  right: 1.2vw !important;
+  left: 17vw !important;
+  right: 1vw !important;
   text-align: center !important;
   font-size: clamp(66px, 9vw, 174px) !important;
 }
 
-/* Large red current round number on the left. */
 .timer-screen.has-interval .interval-badge {
   display: flex !important;
-  left: 0.6vw !important;
-  top: 48% !important;
+  position: absolute !important;
+  left: .5vw !important;
+  top: 50% !important;
   width: 16vw !important;
-  height: 42vh !important;
+  height: 45vh !important;
   transform: translateY(-50%) !important;
   align-items: center !important;
   justify-content: center !important;
@@ -639,21 +239,21 @@ html, body {
 
 .timer-screen.has-interval .interval-number {
   color: var(--red) !important;
+  font-family: "Courier New", monospace !important;
   font-size: clamp(150px, 18vw, 340px) !important;
-  line-height: .80 !important;
+  line-height: .82 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.04em !important;
+  text-shadow: 0 0 5px currentColor, 0 0 16px currentColor !important;
 }
 
-.timer-screen.has-interval .interval-label {
-  display: none !important;
-}
-
-/* Main timer almost flush to the right edge. */
+/* Main clock: large and pushed close to the right edge. */
 .timer-screen.has-interval .timer {
-  left: 17.2vw !important;
-  right: 0.25vw !important;
+  left: 16.5vw !important;
+  right: .15vw !important;
   top: 50% !important;
   height: min(40vw, 56vh) !important;
-  gap: min(.42vw, 7px) !important;
+  gap: min(.4vw, 7px) !important;
 }
 
 .timer-screen.has-interval .led-char {
@@ -666,31 +266,28 @@ html, body {
   height: min(39vw, 55vh) !important;
 }
 
-/* WORK = green state + white clock. */
+/* Work: green title, white clock. */
 .timer-screen.has-interval.state-work .status {
   color: var(--green) !important;
 }
-
 .timer-screen.has-interval.state-work .timer {
   color: var(--white) !important;
 }
 
-/* REST stays BLUE, including the clock. */
+/* Rest: blue title AND blue clock, as requested. */
 .timer-screen.has-interval.state-rest .status,
 .timer-screen.has-interval.state-rest .timer {
   color: var(--blue) !important;
 }
 
-/* PAUSE remains orange, clock white. */
+/* Pause: orange title, white clock. */
 .timer-screen.has-interval.state-paused .status {
   color: var(--orange) !important;
 }
-
 .timer-screen.has-interval.state-paused .timer {
   color: var(--white) !important;
 }
 
-/* Small informational line at the very bottom. */
 .timer-screen.has-interval .footer.intervals-total-footer {
   left: 2vw !important;
   right: 2vw !important;

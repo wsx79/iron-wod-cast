@@ -21,7 +21,7 @@
   let activeVoiceAudio = null;
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
-  let lastIntervalAlertKey = '';
+  let lastRoundAlertKey = '';
   const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
@@ -433,9 +433,6 @@
       timer !== lastTimer &&
       /^[1-3]$/.test(timer)
     ) {
-      // Explicit 3-2-1 preparation cue.
-      // Prefer the packaged sound; WebAudio fallback is guaranteed
-      // if HTMLAudio is rejected by the receiver environment.
       if (!playSoundAsset('countdown')) {
         tone(980, 110, 0.20);
       }
@@ -568,49 +565,22 @@
     return raw;
   }
 
-  function maybePlayRoundAlert(statusText, footerText, audioMode) {
-    const modeRaw = String(audioMode || 'SOUNDS').trim().toUpperCase();
-    const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(modeRaw)
-      ? modeRaw
-      : 'SOUNDS';
+  function maybePlayRoundChangeAlert(statusText, audioMode) {
+    const normalized = normalizeStatus(statusText);
+    const match = normalized.match(/(?:ROUND|RONDA)\s+(\d+)\s*\/\s*(\d+)/);
 
-    const combined = normalizeStatus(`${statusText || ''} ${footerText || ''}`);
-
-    const roundMatch = combined.match(
-      /(?:ROUND|RONDA)\s+(\d+)\s*\/\s*(\d+)/
-    );
-    const legacyIntervalMatch = combined.match(
-      /(?:INTERVALLO\s+(\d+)\s+DI\s+(\d+)|INTERVAL\s+(\d+)\s+OF\s+(\d+)|INTERVALO\s+(\d+)\s+DE\s+(\d+))/
-    );
-
-    let current = '';
-    let total = '';
-
-    if (roundMatch) {
-      current = roundMatch[1];
-      total = roundMatch[2];
-    } else if (legacyIntervalMatch) {
-      current =
-        legacyIntervalMatch[1] ||
-        legacyIntervalMatch[3] ||
-        legacyIntervalMatch[5];
-      total =
-        legacyIntervalMatch[2] ||
-        legacyIntervalMatch[4] ||
-        legacyIntervalMatch[6];
-    } else {
-      lastIntervalAlertKey = '';
+    if (!match) {
+      lastRoundAlertKey = '';
       return;
     }
 
-    const key = `${current}/${total}`;
-    if (key === lastIntervalAlertKey) return;
+    const key = `${match[1]}/${match[2]}`;
+    if (key === lastRoundAlertKey) return;
+    lastRoundAlertKey = key;
 
-    lastIntervalAlertKey = key;
+    const mode = String(audioMode || 'SOUNDS').trim().toUpperCase();
     if (mode === 'SILENT') return;
 
-    // One short, reliable alert every time the active round/step changes,
-    // including WORK -> WORK transitions.
     tone(1180, 120, 0.20);
   }
 
@@ -627,9 +597,8 @@
       data.voiceLanguage || 'it'
     );
 
-    maybePlayRoundAlert(
+    maybePlayRoundChangeAlert(
       statusText,
-      footerText,
       data.audioMode || 'SOUNDS'
     );
 
@@ -664,7 +633,7 @@
     lastTimer = '';
     lastAudioMode = '';
     lastVoiceLanguage = '';
-    lastIntervalAlertKey = '';
+    lastRoundAlertKey = '';
   }
 
 
