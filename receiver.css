@@ -207,3 +207,113 @@ html, body {
 
 .state-idle .status { color: var(--orange); }
 .state-idle .timer { color: var(--white); }
+
+
+/* ================================================================
+   Structured Intervals — TV LED layout v2
+   ================================================================ */
+
+/* Configuration text: deliberately smaller and farther right so it
+   never collides with left-side counters / footer information. */
+.state-config .status {
+  top: 4.2vh;
+  left: 42vw;
+  right: 5vw;
+  text-align: right;
+  font-size: clamp(30px, 4.2vw, 78px);
+  letter-spacing: .035em;
+}
+
+/* Active interval number displayed like a gym timer channel/round
+   counter, but semantically it is the configured interval step. */
+.interval-badge {
+  position: absolute;
+  left: 3.3vw;
+  top: 37%;
+  width: 15vw;
+  height: 38vh;
+  transform: translateY(-30%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.interval-number {
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: clamp(92px, 12vw, 230px);
+  line-height: .88;
+  font-weight: 700;
+  letter-spacing: -.04em;
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 16px currentColor;
+}
+
+.interval-label {
+  margin-top: 3vh;
+  color: var(--orange);
+  font-family: "Courier New", monospace;
+  font-size: clamp(25px, 2.7vw, 54px);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(255,107,0,.8);
+}
+
+/* When an interval badge is active, shift the main timer slightly
+   right so the red 01/02/03 counter has its own clear column. */
+.timer-screen.has-interval .timer {
+  left: 19vw;
+  right: 3vw;
+}
+
+/* Main countdown digits are white for both WORK and REST. */
+.timer-screen.has-interval.state-work .timer,
+.timer-screen.has-interval.state-rest .timer {
+  color: var(--white);
+}
+
+/* WORK / REST retain their semantic status colors. */
+.timer-screen.has-interval.state-work .status {
+  color: var(--green);
+}
+
+.timer-screen.has-interval.state-rest .status {
+  color: var(--blue);
+}
+
+/* In active structured intervals the large bottom footer is not used:
+   INTERVALLO lives directly under the red interval number. */
+.timer-screen.has-interval .footer {
+  visibility: hidden;
+}
+
+/* Keep time cap readable in the free space below the main timer. */
+.timer-screen.has-interval .time-cap {
+  top: 75vh;
+}
+
+/* Smaller TVs / 4:3 mirroring fallback. */
+@media (max-aspect-ratio: 4/3) {
+  .interval-badge {
+    left: 1.5vw;
+    width: 18vw;
+  }
+
+  .interval-number {
+    font-size: clamp(72px, 10vw, 160px);
+  }
+
+  .interval-label {
+    font-size: clamp(20px, 2.2vw, 38px);
+  }
+
+  .timer-screen.has-interval .timer {
+    left: 20vw;
+    right: 1.5vw;
+  }
+}

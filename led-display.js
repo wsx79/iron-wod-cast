@@ -17,6 +17,18 @@
   const timer = document.getElementById('ledTimer');
   const footer = document.getElementById('ledFooter');
   const timeCap = document.getElementById('ledTimeCap');
+  const intervalBadge = document.getElementById('ledIntervalBadge');
+  const intervalNumber = document.getElementById('ledIntervalNumber');
+  const intervalLabel = document.getElementById('ledIntervalLabel');
+
+  // Separate visual-layer alert. It has no Cast APIs and cannot interfere
+  // with receiver.js. Used only when the configured interval step changes.
+  const intervalAlert = new Audio('sounds/countdown.mp3');
+  intervalAlert.preload = 'auto';
+  intervalAlert.volume = 1.0;
+
+  let lastIntervalKey = null;
+  let hasSeenRunningInterval = false;
 
   const SEGMENTS = Object.freeze({
     '0': ['a','b','c','d','e','f'],
@@ -96,6 +108,13 @@
     }
 
     if (
+      value.includes('CONFIGURA') ||
+      value.includes('SET UP') ||
+      value.includes('CONFIGURE') ||
+      value.includes('CONFIGURAR')
+    ) return 'state-config';
+
+    if (
       value.includes('PREPAR') ||
       value.includes('GET READY') ||
       value === 'PREP'
@@ -113,7 +132,9 @@
   }
 
   function setState(statusText) {
+    const hasInterval = screen.classList.contains('has-interval');
     screen.className = `timer-screen ${stateFor(statusText)}`;
+    if (hasInterval) screen.classList.add('has-interval');
   }
 
   function classifyFooterPart(value) {
@@ -132,35 +153,88 @@
     return 'footer-mode';
   }
 
-  function renderFooter(rawFooter, rawStatus) {
-    const fullStatus = String(rawStatus || '').trim();
-    const normalizedStatus = normalize(fullStatus);
+  function parseIntervalStep(rawFooter) {
+    const raw = String(rawFooter || '').trim();
+    const normalized = normalize(raw);
 
-    /*
-     * If the Android sender carries phase information in the status,
-     * display only the fraction at top and FASE at bottom.
-     */
-    const phaseMatch = normalizedStatus.match(/(?:FASE|PHASE)\s+(\d+)\s*\/\s*(\d+)/);
-    if (phaseMatch) {
-      topCounter.textContent = `${phaseMatch[1]}/${phaseMatch[2]}`;
-      topCounter.classList.remove('hidden');
-      footer.textContent = normalizedStatus.includes('PHASE') ? 'PHASE' : 'FASE';
-      footer.className = 'footer phase-footer';
+    const patterns = [
+      /INTERVALLO\s+(\d+)\s+DI\s+(\d+)/,
+      /INTERVAL\s+(\d+)\s+OF\s+(\d+)/,
+      /INTERVALO\s+(\d+)\s+DE\s+(\d+)/
+    ];
 
-      const baseStatus = fullStatus.split('·')[0].trim();
-      status.textContent = baseStatus || fullStatus;
-      setState(baseStatus || fullStatus);
+    for (const pattern of patterns) {
+      const match = normalized.match(pattern);
+      if (match) {
+        return {
+          current: Number(match[1]),
+          total: Number(match[2])
+        };
+      }
+    }
+
+    return null;
+  }
+
+  function playIntervalAlert(interval) {
+    if (!interval) return;
+
+    const key = `${interval.current}/${interval.total}`;
+    if (key === lastIntervalKey) return;
+
+    lastIntervalKey = key;
+
+    // Do not beep merely because a configuration screen is rendered.
+    // The first real WORK/REST interval and every subsequent step change
+    // receive one short alert.
+    const statusValue = normalize(sourceStatus.textContent || '');
+    const isRunningStep =
+      statusValue.includes('WORK') ||
+      statusValue.includes('REST') ||
+      statusValue.includes('LAVORO') ||
+      statusValue.includes('RIPOSO') ||
+      statusValue.includes('TRABAJO') ||
+      statusValue.includes('DESCANSO');
+
+    if (!isRunningStep) return;
+
+    hasSeenRunningInterval = true;
+
+    try {
+      intervalAlert.pause();
+      intervalAlert.currentTime = 0;
+      const result = intervalAlert.play();
+      if (result && typeof result.catch === 'function') {
+        result.catch(error => {
+          console.warn('[IRON WOD LED] interval alert rejected:', error);
+        });
+      }
+    } catch (error) {
+      console.warn('[IRON WOD LED] interval alert failed:', error);
+    }
+  }
+
+  function renderIntervalBadge(interval) {
+    if (!interval) {
+      intervalBadge.classList.add('hidden');
+      screen.classList.remove('has-interval');
       return;
     }
 
-    topCounter.textContent = '';
-    topCounter.classList.add('hidden');
-    footer.className = 'footer';
+    intervalNumber.textContent = String(interval.current).padStart(2, '0');
+    intervalLabel.textContent = 'INTERVALLO';
+    intervalBadge.classList.remove('hidden');
+    screen.classList.add('has-interval');
+    playIntervalAlert(interval);
+  }
 
+  function renderFooter(rawFooter, rawStatus) {
     const parts = String(rawFooter || '')
       .split('•')
       .map(part => part.trim())
       .filter(Boolean);
+
+    footer.className = 'footer';
 
     if (!parts.length) {
       footer.textContent = 'TIMER';
@@ -175,6 +249,7 @@
         sep.textContent = '  |  ';
         footer.appendChild(sep);
       }
+
       const node = document.createElement('span');
       node.className = classifyFooterPart(part);
       node.textContent = part;
@@ -188,6 +263,9 @@
     const footerText = sourceFooter.textContent || '';
     const capText = sourceTimeCap.textContent || '';
 
+    const activeInterval = parseIntervalStep(footerText);
+
+    renderIntervalBadge(activeInterval);
     status.textContent = statusText;
     setState(statusText);
     renderDigits(timerText);
