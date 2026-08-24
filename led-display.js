@@ -97,9 +97,20 @@
   }
 
   function cleanStatus(rawStatus) {
-    return String(rawStatus || '')
+    const cleaned = String(rawStatus || '')
       .replace(/\s*·?\s*(?:ROUND|RONDA)\s+\d+\s*\/\s*\d+/i, '')
       .trim();
+
+    const normalized = normalize(cleaned);
+    if (
+      normalized === 'INTERVALS' ||
+      normalized === 'INTERVALLI' ||
+      normalized === 'INTERVALOS'
+    ) {
+      return '';
+    }
+
+    return cleaned;
   }
 
   function visualState(rawStatus) {

@@ -298,3 +298,62 @@ html, body {
   font-weight: 700 !important;
   letter-spacing: .03em !important;
 }
+
+
+/* ================================================================
+   SAFE INTERVALS OVERRIDE v8 — micro alignment / sizing fixes
+   ================================================================ */
+
+/* Never show a textual label beside the red 01/02/03 counter. */
+.timer-screen.has-interval .interval-label,
+.timer-screen.has-interval [id="ledIntervalLabel"] {
+  display: none !important;
+}
+
+/* WORK / REST / PAUSA truly centered on the TV width. */
+.timer-screen.has-interval .status {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  text-align: center !important;
+  transform: none !important;
+}
+
+/* Configuration caption: centered too, but much smaller so it fits. */
+.timer-screen.state-config .status {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  top: 2vh !important;
+  text-align: center !important;
+  font-size: clamp(28px, 3.8vw, 70px) !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+/* Slightly smaller red current-round number so 01/02/... always fits. */
+.timer-screen.has-interval .interval-number {
+  font-size: clamp(125px, 15.8vw, 295px) !important;
+  line-height: .84 !important;
+}
+
+/* Bottom info is intentionally more readable, but still secondary. */
+.timer-screen.has-interval .footer.intervals-total-footer {
+  bottom: .8vh !important;
+  font-size: clamp(27px, 3.1vw, 58px) !important;
+  line-height: 1 !important;
+  letter-spacing: .035em !important;
+}
+
+/* Keep semantic colors explicit after centering overrides. */
+.timer-screen.has-interval.state-work .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.has-interval.state-rest .status {
+  color: var(--blue) !important;
+}
+
+.timer-screen.has-interval.state-paused .status {
+  color: var(--orange) !important;
+}

@@ -433,9 +433,14 @@
       timer !== lastTimer &&
       /^[1-3]$/.test(timer)
     ) {
-      if (!playSoundAsset('countdown')) {
-        tone(980, 110, 0.20);
-      }
+      // Direct WebAudio preparation beep: do not depend on HTMLAudio
+      // autoplay/media state. One distinct beep for every 3 -> 2 -> 1 step.
+      const countdownNumber = Number(timer);
+      const frequency =
+        countdownNumber === 3 ? 880 :
+        countdownNumber === 2 ? 980 :
+        1120;
+      tone(frequency, 150, 0.24);
     }
 
     if (
