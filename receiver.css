@@ -317,3 +317,85 @@ html, body {
     right: 1.5vw;
   }
 }
+
+
+/* ================================================================
+   LED display v3 — tighter top status, larger timer/counter
+   ================================================================ */
+
+/* WORK / REST / PAUSA sit close to the TV's top safe edge. */
+.timer-screen.has-interval.state-work .status,
+.timer-screen.has-interval.state-rest .status,
+.timer-screen.has-interval.state-paused .status {
+  top: 1.8vh;
+  left: 21vw;
+  right: 2.5vw;
+  text-align: center;
+  font-size: clamp(64px, 8.8vw, 168px);
+}
+
+/* Force semantic colors even if older rules are cached. */
+.timer-screen.has-interval.state-work .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.has-interval.state-rest .status {
+  color: var(--blue) !important;
+}
+
+.timer-screen.has-interval.state-paused .status {
+  color: var(--orange) !important;
+}
+
+/* Configuration is smaller and right aligned. */
+.timer-screen.state-config .status {
+  top: 1.8vh;
+  left: 48vw;
+  right: 2.8vw;
+  text-align: right;
+  font-size: clamp(26px, 3.5vw, 68px);
+}
+
+/* Bigger current interval number, without any text label below it. */
+.timer-screen.has-interval .interval-badge {
+  left: 0.8vw;
+  top: 47%;
+  width: 15.5vw;
+  height: 38vh;
+  transform: translateY(-50%);
+}
+
+.timer-screen.has-interval .interval-number {
+  font-size: clamp(135px, 16.5vw, 315px);
+  line-height: .82;
+}
+
+.timer-screen.has-interval .interval-label {
+  display: none !important;
+}
+
+/* Larger main timer, still leaving a dedicated left column for 01/02/03. */
+.timer-screen.has-interval .timer {
+  left: 16.3vw;
+  right: 0.8vw;
+  top: 49%;
+  height: min(34vw, 47vh);
+  gap: min(.55vw, 9px);
+}
+
+.timer-screen.has-interval .led-char {
+  width: min(18vw, 30vh);
+  height: min(33vw, 46vh);
+}
+
+.timer-screen.has-interval .led-colon {
+  width: min(4.7vw, 7.4vh);
+  height: min(33vw, 46vh);
+}
+
+/* Active WORK/REST timer digits are always white. */
+.timer-screen.has-interval.state-work .timer,
+.timer-screen.has-interval.state-rest .timer,
+.timer-screen.has-interval.state-paused .timer {
+  color: var(--white) !important;
+}

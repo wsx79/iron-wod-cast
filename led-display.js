@@ -21,15 +21,6 @@
   const intervalNumber = document.getElementById('ledIntervalNumber');
   const intervalLabel = document.getElementById('ledIntervalLabel');
 
-  // Separate visual-layer alert. It has no Cast APIs and cannot interfere
-  // with receiver.js. Used only when the configured interval step changes.
-  const intervalAlert = new Audio('sounds/countdown.mp3');
-  intervalAlert.preload = 'auto';
-  intervalAlert.volume = 1.0;
-
-  let lastIntervalKey = null;
-  let hasSeenRunningInterval = false;
-
   const SEGMENTS = Object.freeze({
     '0': ['a','b','c','d','e','f'],
     '1': ['b','c'],
@@ -176,44 +167,6 @@
     return null;
   }
 
-  function playIntervalAlert(interval) {
-    if (!interval) return;
-
-    const key = `${interval.current}/${interval.total}`;
-    if (key === lastIntervalKey) return;
-
-    lastIntervalKey = key;
-
-    // Do not beep merely because a configuration screen is rendered.
-    // The first real WORK/REST interval and every subsequent step change
-    // receive one short alert.
-    const statusValue = normalize(sourceStatus.textContent || '');
-    const isRunningStep =
-      statusValue.includes('WORK') ||
-      statusValue.includes('REST') ||
-      statusValue.includes('LAVORO') ||
-      statusValue.includes('RIPOSO') ||
-      statusValue.includes('TRABAJO') ||
-      statusValue.includes('DESCANSO');
-
-    if (!isRunningStep) return;
-
-    hasSeenRunningInterval = true;
-
-    try {
-      intervalAlert.pause();
-      intervalAlert.currentTime = 0;
-      const result = intervalAlert.play();
-      if (result && typeof result.catch === 'function') {
-        result.catch(error => {
-          console.warn('[IRON WOD LED] interval alert rejected:', error);
-        });
-      }
-    } catch (error) {
-      console.warn('[IRON WOD LED] interval alert failed:', error);
-    }
-  }
-
   function renderIntervalBadge(interval) {
     if (!interval) {
       intervalBadge.classList.add('hidden');
@@ -222,10 +175,9 @@
     }
 
     intervalNumber.textContent = String(interval.current).padStart(2, '0');
-    intervalLabel.textContent = 'INTERVALLO';
+    intervalLabel.textContent = '';
     intervalBadge.classList.remove('hidden');
     screen.classList.add('has-interval');
-    playIntervalAlert(interval);
   }
 
   function renderFooter(rawFooter, rawStatus) {

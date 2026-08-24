@@ -21,6 +21,7 @@
   let activeVoiceAudio = null;
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
+  let lastIntervalAlertKey = '';
   const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
@@ -562,6 +563,37 @@
     return raw;
   }
 
+  function maybePlayIntervalAlert(footerText, audioMode) {
+    const modeRaw = String(audioMode || 'SOUNDS').trim().toUpperCase();
+    const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(modeRaw)
+      ? modeRaw
+      : 'SOUNDS';
+
+    const normalized = normalizeStatus(footerText);
+    const match = normalized.match(
+      /(?:INTERVALLO\s+(\d+)\s+DI\s+(\d+)|INTERVAL\s+(\d+)\s+OF\s+(\d+)|INTERVALO\s+(\d+)\s+DE\s+(\d+))/
+    );
+
+    if (!match) {
+      lastIntervalAlertKey = '';
+      return;
+    }
+
+    const current = match[1] || match[3] || match[5];
+    const total = match[2] || match[4] || match[6];
+    const key = `${current}/${total}`;
+
+    if (key === lastIntervalAlertKey) return;
+    lastIntervalAlertKey = key;
+
+    if (mode === 'SILENT') return;
+
+    // Dedicated short alert for every configured interval step.
+    // Uses the receiver's already-primed WebAudio context, so it does not
+    // depend on a second HTMLAudio element or autoplay permission.
+    tone(1180, 120, 0.20);
+  }
+
   function updateTimer(data) {
     const resolved = resolveStatusAndTimeCap(data);
     const statusText = compactCompletionStatus(resolved.statusText);
@@ -573,6 +605,11 @@
       timerText,
       data.audioMode || 'SOUNDS',
       data.voiceLanguage || 'it'
+    );
+
+    maybePlayIntervalAlert(
+      footerText,
+      data.audioMode || 'SOUNDS'
     );
 
     statusEl.textContent = statusText;
@@ -606,6 +643,7 @@
     lastTimer = '';
     lastAudioMode = '';
     lastVoiceLanguage = '';
+    lastIntervalAlertKey = '';
   }
 
 
