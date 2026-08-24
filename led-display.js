@@ -289,6 +289,26 @@
     intervalBadge.classList.add('hidden');
   }
 
+  function renderIntervalsBottomInfo(rawStatus, roundInfo) {
+    const clean = normalize(cleanStatus(rawStatus));
+    const isWorkOrRest =
+      clean === 'WORK' ||
+      clean === 'REST' ||
+      clean === 'LAVORO' ||
+      clean === 'RIPOSO' ||
+      clean === 'TRABAJO' ||
+      clean === 'DESCANSO';
+
+    if (!isWorkOrRest || !roundInfo || !roundInfo.total) {
+      return false;
+    }
+
+    footer.className = 'footer intervals-total-footer';
+    footer.classList.remove('hidden');
+    footer.textContent = `TOTALE INTERVALLI ${roundInfo.current}/${roundInfo.total}`;
+    return true;
+  }
+
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
     const timerText = sourceTimer.textContent || '';
@@ -299,7 +319,11 @@
 
     applyState(rawStatus, roundInfo);
     renderDigits(timerText);
-    renderFooter(footerText);
+
+    const renderedIntervalsInfo = renderIntervalsBottomInfo(rawStatus, roundInfo);
+    if (!renderedIntervalsInfo) {
+      renderFooter(footerText);
+    }
 
     timeCap.textContent = capText;
     timeCap.classList.toggle('hidden', !String(capText).trim());

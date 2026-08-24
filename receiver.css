@@ -554,3 +554,54 @@ html, body {
     right: 1vw !important;
   }
 }
+
+
+/* ================================================================
+   LED v5 — Structured Intervals only
+   ================================================================ */
+
+/* Make the main interval clock even larger. */
+.timer-screen.has-round.state-work .timer,
+.timer-screen.has-round.state-rest .timer {
+  left: 0.7vw !important;
+  right: 0.7vw !important;
+  top: 50%;
+  height: min(39vw, 54vh);
+}
+
+.timer-screen.has-round.state-work .led-char,
+.timer-screen.has-round.state-rest .led-char {
+  width: min(20.5vw, 34vh);
+  height: min(38vw, 53vh);
+}
+
+.timer-screen.has-round.state-work .led-colon,
+.timer-screen.has-round.state-rest .led-colon {
+  width: min(4.4vw, 6.8vh);
+  height: min(38vw, 53vh);
+}
+
+/* WORK countdown stays white. */
+.timer-screen.has-round.state-work .timer {
+  color: var(--white) !important;
+}
+
+/* REST stays blue: both label and timer. */
+.timer-screen.has-round.state-rest .status,
+.timer-screen.has-round.state-rest .timer {
+  color: var(--blue) !important;
+}
+
+/* Small informational line aligned with the bottom safe edge. */
+.timer-screen .footer.intervals-total-footer {
+  left: 3vw;
+  right: 3vw;
+  bottom: 1.2vh;
+  text-align: center;
+  color: var(--muted);
+  font-size: clamp(20px, 2.2vw, 42px);
+  font-weight: 700;
+  letter-spacing: .035em;
+  line-height: 1;
+  text-shadow: none;
+}
