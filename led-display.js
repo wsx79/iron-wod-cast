@@ -85,8 +85,21 @@
     }
   }
 
-  function parseRound(rawStatus) {
+  function parseInterval(rawStatus) {
     const normalized = normalize(rawStatus);
+    const match = normalized.match(
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
+    );
+    if (!match) return null;
+
+    return {
+      current: Number(match[1]),
+      total: Number(match[2])
+    };
+  }
+
+  function parseRound(rawFooter) {
+    const normalized = normalize(rawFooter);
     const match = normalized.match(/(?:ROUND|RONDA)\s+(\d+)\s*\/\s*(\d+)/);
     if (!match) return null;
 
@@ -98,7 +111,10 @@
 
   function cleanStatus(rawStatus) {
     const cleaned = String(rawStatus || '')
-      .replace(/\s*·?\s*(?:ROUND|RONDA)\s+\d+\s*\/\s*\d+/i, '')
+      .replace(
+        /\s*·?\s*(?:INTERVALLO|INTERVALO|INTERVAL)\s+\d+\s*\/\s*\d+/i,
+        ''
+      )
       .trim();
 
     const normalized = normalize(cleaned);
@@ -150,34 +166,49 @@
 
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
+    const rawFooter = sourceFooter.textContent || '';
     const timerText = sourceTimer.textContent || '';
     const capText = sourceTimeCap.textContent || '';
-    const round = parseRound(rawStatus);
+
+    const interval = parseInterval(rawStatus);
+    const round = parseRound(rawFooter);
     const clean = cleanStatus(rawStatus);
 
     screen.className = `timer-screen ${visualState(rawStatus)}`;
     status.textContent = clean;
     renderDigits(timerText);
 
-    // Structured Intervals: red round number at left, no blue round at top.
-    if (round) {
+    // Structured Intervals new protocol:
+    // status = WORK/REST · INTERVALLO n/N
+    // footer = ROUND x/y
+    if (interval) {
       screen.classList.add('has-interval');
-      intervalNumber.textContent = String(round.current).padStart(2, '0');
+
+      // Big red current INTERVAL number on the left.
+      intervalNumber.textContent = String(interval.current).padStart(2, '0');
       intervalBadge.classList.remove('hidden');
 
+      // No extra blue counter at the top.
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
-      footer.textContent = `INTERVALLI ${round.current}/${round.total}`;
-      footer.className = 'footer intervals-total-footer';
-      footer.classList.remove('hidden');
+      // Bottom information = total ROUND progress.
+      if (round) {
+        footer.textContent = `ROUND ${round.current}/${round.total}`;
+        footer.className = 'footer intervals-total-footer';
+        footer.classList.remove('hidden');
+      } else {
+        footer.textContent = '';
+        footer.className = 'footer';
+        footer.classList.add('hidden');
+      }
     } else {
       intervalBadge.classList.add('hidden');
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
-      // For non-Intervals keep the proven source footer for now.
-      const sourceFooterText = String(sourceFooter.textContent || '').trim();
+      // Other timers are deliberately untouched for now.
+      const sourceFooterText = String(rawFooter).trim();
       footer.textContent = sourceFooterText;
       footer.className = 'footer';
       footer.classList.toggle('hidden', !sourceFooterText);

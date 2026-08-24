@@ -570,9 +570,11 @@
     return raw;
   }
 
-  function maybePlayRoundChangeAlert(statusText, audioMode) {
+  function maybePlayIntervalChangeAlert(statusText, audioMode) {
     const normalized = normalizeStatus(statusText);
-    const match = normalized.match(/(?:ROUND|RONDA)\s+(\d+)\s*\/\s*(\d+)/);
+    const match = normalized.match(
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
+    );
 
     if (!match) {
       lastRoundAlertKey = '';
@@ -586,6 +588,7 @@
     const mode = String(audioMode || 'SOUNDS').trim().toUpperCase();
     if (mode === 'SILENT') return;
 
+    // Short alert on every interval transition, including WORK -> WORK.
     tone(1180, 120, 0.20);
   }
 
@@ -602,7 +605,7 @@
       data.voiceLanguage || 'it'
     );
 
-    maybePlayRoundChangeAlert(
+    maybePlayIntervalChangeAlert(
       statusText,
       data.audioMode || 'SOUNDS'
     );
