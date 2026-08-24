@@ -431,9 +431,14 @@
       mode === 'SOUNDS' &&
       preparing &&
       timer !== lastTimer &&
-      /^\d+$/.test(timer)
+      /^[1-3]$/.test(timer)
     ) {
-      countdownCue();
+      // Explicit 3-2-1 preparation cue.
+      // Prefer the packaged sound; WebAudio fallback is guaranteed
+      // if HTMLAudio is rejected by the receiver environment.
+      if (!playSoundAsset('countdown')) {
+        tone(980, 110, 0.20);
+      }
     }
 
     if (

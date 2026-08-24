@@ -272,21 +272,45 @@
     const clean = cleanStatus(statusText);
     status.textContent = clean;
 
-    if (roundInfo) {
+    const normalizedClean = normalize(clean);
+    const isIntervalsState =
+      !!roundInfo &&
+      (
+        normalizedClean === 'WORK' ||
+        normalizedClean === 'REST' ||
+        normalizedClean === 'LAVORO' ||
+        normalizedClean === 'RIPOSO' ||
+        normalizedClean === 'TRABAJO' ||
+        normalizedClean === 'DESCANSO' ||
+        normalizedClean === 'PAUSA' ||
+        normalizedClean === 'PAUSED'
+      );
+
+    if (isIntervalsState) {
+      // Intervals keeps the approved gym-timer layout:
+      // large red current round number on the left.
+      intervalNumber.textContent = String(roundInfo.current).padStart(2, '0');
+      intervalLabel.textContent = '';
+      intervalBadge.classList.remove('hidden');
+      screen.classList.add('has-interval');
+
+      // No blue ROUND n/N at the top for Intervals.
+      topCounter.textContent = '';
+      topCounter.classList.add('hidden');
+    } else if (roundInfo) {
       topCounter.textContent = roundInfo.label;
       topCounter.classList.remove('hidden');
       screen.classList.add('has-round');
+      intervalBadge.classList.add('hidden');
     } else {
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
+      intervalBadge.classList.add('hidden');
     }
 
     if (!clean) {
       screen.classList.add('status-hidden');
     }
-
-    // Legacy badge is no longer part of the unified visual language.
-    intervalBadge.classList.add('hidden');
   }
 
   function renderIntervalsBottomInfo(rawStatus, roundInfo) {
@@ -305,7 +329,7 @@
 
     footer.className = 'footer intervals-total-footer';
     footer.classList.remove('hidden');
-    footer.textContent = `TOTALE INTERVALLI ${roundInfo.current}/${roundInfo.total}`;
+    footer.textContent = `INTERVALLI ${roundInfo.current}/${roundInfo.total}`;
     return true;
   }
 
