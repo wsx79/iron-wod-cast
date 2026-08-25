@@ -700,3 +700,16 @@ html, body {
 .timer-screen.has-emom.state-work .status {
   visibility: hidden !important;
 }
+
+
+/* ================================================================
+   v23 — EMOM ROUND row enlarged on Chromecast only.
+   Android EMOM is intentionally untouched.
+   Previous EMOM footer: clamp(38px, 4.15vw, 78px)
+   New size is approximately 3x.
+   ================================================================ */
+.timer-screen.has-emom .footer.emom-footer {
+  font-size: clamp(114px, 12.45vw, 234px) !important;
+  bottom: 1.2vh !important;
+  line-height: .9 !important;
+}
