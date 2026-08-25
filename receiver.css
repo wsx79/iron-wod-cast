@@ -578,3 +578,27 @@ html, body {
   color: var(--red) !important;
   padding-left: .16em !important;
 }
+
+
+/* ================================================================
+   LED v20 — AMRAP micro-fixes
+   ================================================================ */
+
+/* Configuration label must stay compact; the huge active AMRAP status
+   typography is reserved for the running workout. */
+.timer-screen.has-amrap.state-config .status {
+  top: 2vh !important;
+  font-size: clamp(28px, 3.8vw, 70px) !important;
+  line-height: 1 !important;
+  color: var(--orange) !important;
+}
+
+/* Explicit footer colors, including localized labels with ':' punctuation. */
+.timer-screen.has-amrap .footer.amrap-footer .amrap-primary {
+  color: #38d9d0 !important;
+}
+
+.timer-screen.has-amrap .footer.amrap-footer .amrap-count {
+  color: var(--red) !important;
+  padding-left: .16em !important;
+}

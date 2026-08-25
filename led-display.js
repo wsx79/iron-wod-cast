@@ -187,20 +187,6 @@
 
   function renderAmrapFooter(rawFooter) {
     const text = String(rawFooter || '').trim();
-    const normalized = normalize(text);
-
-    const patterns = [
-      /^(ROUND COMPLETATI)\s+(\d+)$/,
-      /^(ROUNDS COMPLETED)\s+(\d+)$/,
-      /^(RONDAS COMPLETADAS)\s+(\d+)$/,
-      /^(RONDAS COMPLETADOS)\s+(\d+)$/
-    ];
-
-    let match = null;
-    for (const pattern of patterns) {
-      match = normalized.match(pattern);
-      if (match) break;
-    }
 
     footer.className = 'footer amrap-footer';
     footer.classList.toggle('hidden', !text);
@@ -210,17 +196,23 @@
       return;
     }
 
-    if (match) {
-      const numberMatch = text.match(/(\d+)\s*$/);
-      const number = numberMatch ? numberMatch[1] : match[2];
-      const label = numberMatch
-        ? text.slice(0, numberMatch.index).trim()
-        : match[1];
+    // TimerBoard sends localized values such as:
+    // "ROUND COMPLETATI: 3", "ROUNDS COMPLETED: 3", "RONDAS COMPLETADAS: 3".
+    // Split the trailing number instead of depending on exact punctuation/language.
+    const numberMatch = text.match(/(\d+)\s*$/);
+    if (numberMatch) {
+      const number = numberMatch[1];
+      const label = text
+        .slice(0, numberMatch.index)
+        .replace(/\s*:\s*$/, '')
+        .trim();
 
-      footer.innerHTML =
-        `<span class="amrap-primary">${label}</span>` +
-        `<span class="amrap-count">${number}</span>`;
-      return;
+      if (label) {
+        footer.innerHTML =
+          `<span class="amrap-primary">${label}</span>` +
+          `<span class="amrap-count">${number}</span>`;
+        return;
+      }
     }
 
     footer.textContent = text;
