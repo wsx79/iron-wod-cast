@@ -21,6 +21,7 @@
   let activeVoiceAudio = null;
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
+  let lastRoundAlertKey = '';
   const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
@@ -432,6 +433,7 @@
       timer !== lastTimer &&
       /^\d+$/.test(timer)
     ) {
+      // Bundled MP3 first; playSoundAsset already falls back to WebAudio.
       countdownCue();
     }
 
@@ -463,7 +465,10 @@
         } else {
           restCue();
         }
-      } else if (activeWork && (previousPreparing || isRestStatus(prev))) {
+      } else if (
+        activeWork &&
+        (previousPreparing || isRestStatus(prev))
+      ) {
         if (mode === 'VOICE') {
           const cueName = previousPreparing ? 'go' : 'work';
           if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
@@ -562,15 +567,73 @@
     return raw;
   }
 
+  function maybePlayIntervalChangeAlert(
+    statusText,
+    previousStatusText,
+    audioMode,
+    voiceLanguage
+  ) {
+    const current = normalizeStatus(statusText);
+    const previous = normalizeStatus(previousStatusText);
+
+    // The normal audio path already handles PREP -> WORK, REST -> WORK and REST.
+    // This helper exists ONLY for consecutive WORK intervals (WORK -> WORK).
+    if (!isActiveWorkStatus(current) || !isActiveWorkStatus(previous)) {
+      return;
+    }
+
+    const currentMatch = current.match(
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
+    );
+    const previousMatch = previous.match(
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
+    );
+
+    if (!currentMatch || !previousMatch) return;
+
+    const currentKey = `${currentMatch[1]}/${currentMatch[2]}`;
+    const previousKey = `${previousMatch[1]}/${previousMatch[2]}`;
+    if (currentKey === previousKey) return;
+
+    const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
+    const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(rawMode)
+      ? rawMode
+      : 'SOUNDS';
+
+    if (mode === 'SILENT') return;
+
+    if (mode === 'VOICE') {
+      if (!playVoiceAsset('work', voiceLanguage || 'it')) {
+        const spoken = speakCue(
+          localizedFallbackText('work', voiceLanguage || 'it'),
+          voiceLanguage || 'it',
+          true
+        );
+        if (!spoken) workCue();
+      }
+    } else {
+      workCue();
+    }
+  }
+
   function updateTimer(data) {
     const resolved = resolveStatusAndTimeCap(data);
     const statusText = compactCompletionStatus(resolved.statusText);
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
 
+    const previousStatusText = lastStatus;
+
     maybePlayCue(
       statusText,
       timerText,
+      data.audioMode || 'SOUNDS',
+      data.voiceLanguage || 'it'
+    );
+
+    maybePlayIntervalChangeAlert(
+      statusText,
+      previousStatusText,
       data.audioMode || 'SOUNDS',
       data.voiceLanguage || 'it'
     );
@@ -606,6 +669,7 @@
     lastTimer = '';
     lastAudioMode = '';
     lastVoiceLanguage = '';
+    lastRoundAlertKey = '';
   }
 
 
