@@ -218,6 +218,26 @@
     footer.textContent = text;
   }
 
+  function parseEmomFooter(rawFooter) {
+    const text = String(rawFooter || '').trim();
+    const match = normalize(text).match(
+      /^EMOM\s*[·\-]\s*ROUND\s+(\d+)\s*\/\s*(\d+)$/
+    );
+    if (!match) return null;
+    return {
+      current: Number(match[1]),
+      total: Number(match[2])
+    };
+  }
+
+  function renderEmomFooter(emom) {
+    footer.className = 'footer emom-footer';
+    footer.classList.remove('hidden');
+    footer.innerHTML =
+      `<span class="emom-primary">ROUND</span>` +
+      `<span class="emom-count">${emom.current}/${emom.total}</span>`;
+  }
+
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
     const rawFooter = sourceFooter.textContent || '';
@@ -227,12 +247,15 @@
     const interval = parseInterval(rawStatus);
     const round = parseRound(rawFooter);
     const totalTime = parseTotalTime(rawFooter);
+    const emom = parseEmomFooter(rawFooter);
     const clean = cleanStatus(rawStatus);
 
     if (isIdleSource(rawStatus, timerText, rawFooter)) {
       activeVisualMode = '';
     } else if (interval) {
       activeVisualMode = 'INTERVALS';
+    } else if (emom) {
+      activeVisualMode = 'EMOM';
     } else if (isAmrapStatus(rawStatus)) {
       activeVisualMode = 'AMRAP';
     }
@@ -278,6 +301,14 @@
         footer.innerHTML =
           `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
       }
+    } else if (activeVisualMode === 'EMOM' && emom) {
+      screen.classList.add('has-emom');
+
+      intervalBadge.classList.add('hidden');
+      topCounter.textContent = '';
+      topCounter.classList.add('hidden');
+
+      renderEmomFooter(emom);
     } else if (activeVisualMode === 'AMRAP') {
       screen.classList.add('has-amrap');
 

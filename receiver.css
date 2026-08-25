@@ -602,3 +602,95 @@ html, body {
   color: var(--red) !important;
   padding-left: .16em !important;
 }
+
+
+/* ================================================================
+   LED v21 — EMOM adopts the frozen Intervals/AMRAP visual language
+   ================================================================ */
+
+.timer-screen.has-emom .top-counter {
+  display: none !important;
+}
+
+.timer-screen.has-emom .status {
+  top: 1.2vh !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  text-align: center !important;
+  transform: none !important;
+  font-size: clamp(66px, 9vw, 174px) !important;
+  line-height: .95 !important;
+}
+
+.timer-screen.has-emom.state-work .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.has-emom.state-rest .status {
+  color: #4da3ff !important;
+}
+
+.timer-screen.has-emom.state-paused .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-emom.state-prep .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-emom .timer {
+  left: 1vw !important;
+  right: 1vw !important;
+  top: 50% !important;
+  height: min(40vw, 56vh) !important;
+  gap: min(.12vw, 2px) !important;
+  color: var(--white) !important;
+}
+
+.timer-screen.has-emom .led-char {
+  width: min(21vw, 35vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+.timer-screen.has-emom .led-colon {
+  width: min(3.25vw, 5.1vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+/* Configuration stays compact. */
+.timer-screen.has-emom.state-config .status {
+  top: 2vh !important;
+  font-size: clamp(28px, 3.8vw, 70px) !important;
+  line-height: 1 !important;
+  color: var(--orange) !important;
+}
+
+/* Finished label stays readable, not gigantic. */
+.timer-screen.has-emom.state-finished .status {
+  font-size: clamp(34px, 4.8vw, 88px) !important;
+  color: var(--green) !important;
+}
+
+/* Footer: ROUND aqua, x/y red. */
+.timer-screen.has-emom .footer.emom-footer {
+  left: 1vw !important;
+  right: 1vw !important;
+  bottom: .8vh !important;
+  width: auto !important;
+  text-align: center !important;
+  font-size: clamp(38px, 4.15vw, 78px) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: .025em !important;
+  white-space: nowrap !important;
+}
+
+.timer-screen.has-emom .footer.emom-footer .emom-primary {
+  color: #38d9d0 !important;
+}
+
+.timer-screen.has-emom .footer.emom-footer .emom-count {
+  color: var(--red) !important;
+  padding-left: .16em !important;
+}
