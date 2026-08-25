@@ -694,3 +694,9 @@ html, body {
   color: var(--red) !important;
   padding-left: .16em !important;
 }
+
+
+/* v22 — EMOM: protocol keeps WORK for audio, visual label is intentionally hidden. */
+.timer-screen.has-emom.state-work .status {
+  visibility: hidden !important;
+}

@@ -22,6 +22,7 @@
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
   let lastRoundAlertKey = '';
+  let lastEmomRoundKey = '';
   const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
@@ -616,6 +617,47 @@
     }
   }
 
+  function maybePlayEmomRoundCue(footerText, audioMode, voiceLanguage) {
+    const normalized = normalizeStatus(footerText);
+    const match = normalized.match(
+      /^EMOM\s*[·\-]\s*ROUND\s+(\d+)\s*\/\s*(\d+)$/
+    );
+
+    if (!match) {
+      lastEmomRoundKey = '';
+      return;
+    }
+
+    const key = `${match[1]}/${match[2]}`;
+    if (key === lastEmomRoundKey) return;
+
+    // The first EMOM round is already announced by PREP -> WORK / GO.
+    // From round 2 onward, every round boundary gets an explicit WORK cue.
+    const hadPreviousRound = lastEmomRoundKey !== '';
+    lastEmomRoundKey = key;
+    if (!hadPreviousRound) return;
+
+    const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
+    const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(rawMode)
+      ? rawMode
+      : 'SOUNDS';
+
+    if (mode === 'SILENT') return;
+
+    if (mode === 'VOICE') {
+      if (!playVoiceAsset('work', voiceLanguage || 'it')) {
+        const spoken = speakCue(
+          localizedFallbackText('work', voiceLanguage || 'it'),
+          voiceLanguage || 'it',
+          true
+        );
+        if (!spoken) workCue();
+      }
+    } else {
+      workCue();
+    }
+  }
+
   function updateTimer(data) {
     const resolved = resolveStatusAndTimeCap(data);
     const statusText = compactCompletionStatus(resolved.statusText);
@@ -634,6 +676,12 @@
     maybePlayIntervalChangeAlert(
       statusText,
       previousStatusText,
+      data.audioMode || 'SOUNDS',
+      data.voiceLanguage || 'it'
+    );
+
+    maybePlayEmomRoundCue(
+      footerText,
       data.audioMode || 'SOUNDS',
       data.voiceLanguage || 'it'
     );
@@ -670,6 +718,7 @@
     lastAudioMode = '';
     lastVoiceLanguage = '';
     lastRoundAlertKey = '';
+    lastEmomRoundKey = '';
   }
 
 
