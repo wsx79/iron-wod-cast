@@ -1,6 +1,11 @@
 (() => {
   'use strict';
 
+  /*
+   * VISUAL MIRROR ONLY.
+   * No Cast APIs are used here.
+   * receiver.js remains the sole owner of receiving timer messages.
+   */
   const sourceStatus = document.getElementById('statusText');
   const sourceTimer = document.getElementById('timerText');
   const sourceFooter = document.getElementById('footerText');
@@ -12,23 +17,6 @@
   const timer = document.getElementById('ledTimer');
   const footer = document.getElementById('ledFooter');
   const timeCap = document.getElementById('ledTimeCap');
-
-  let intervalBadge = document.getElementById('ledIntervalBadge');
-  let intervalNumber = document.getElementById('ledIntervalNumber');
-
-  // Older MirrorSafe index may not have the badge. Create it safely.
-  if (!intervalBadge) {
-    intervalBadge = document.createElement('div');
-    intervalBadge.id = 'ledIntervalBadge';
-    intervalBadge.className = 'interval-badge hidden';
-
-    intervalNumber = document.createElement('div');
-    intervalNumber.id = 'ledIntervalNumber';
-    intervalNumber.className = 'interval-number';
-    intervalBadge.appendChild(intervalNumber);
-
-    screen.appendChild(intervalBadge);
-  }
 
   const SEGMENTS = Object.freeze({
     '0': ['a','b','c','d','e','f'],
@@ -81,160 +69,129 @@
         segment.className = `led-seg led-${part}${active.has(part) ? ' on' : ''}`;
         digit.appendChild(segment);
       }
+
       timer.appendChild(digit);
     }
   }
 
-  function parseInterval(rawStatus) {
-    const normalized = normalize(rawStatus);
-    const match = normalized.match(
-      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
-    );
-    if (!match) return null;
+  function stateFor(statusText) {
+    const value = normalize(statusText);
 
-    return {
-      current: Number(match[1]),
-      total: Number(match[2])
-    };
-  }
-
-  function parseRound(rawFooter) {
-    const normalized = normalize(rawFooter);
-    const match = normalized.match(/(?:ROUND|RONDA)\s+(\d+)\s*\/\s*(\d+)/);
-    if (!match) return null;
-
-    return {
-      current: Number(match[1]),
-      total: Number(match[2])
-    };
-  }
-
-  function cleanStatus(rawStatus) {
-    const cleaned = String(rawStatus || '')
-      .replace(
-        /\s*·?\s*(?:INTERVALLO|INTERVALO|INTERVAL)\s+\d+\s*\/\s*\d+/i,
-        ''
-      )
-      .trim();
-
-    const normalized = normalize(cleaned);
     if (
-      normalized === 'INTERVALS' ||
-      normalized === 'INTERVALLI' ||
-      normalized === 'INTERVALOS'
-    ) {
-      return '';
-    }
+      value === 'OTC' ||
+      value.includes('OVER TIME CAP') ||
+      value.includes('OLTRE TIME CAP')
+    ) return 'state-otc';
 
-    return cleaned;
-  }
-
-  function visualState(rawStatus) {
-    const value = normalize(cleanStatus(rawStatus));
+    if (
+      value.includes('COMPLET') ||
+      value.includes('COMPLETE') ||
+      value.includes('FINISH') ||
+      value.includes('FINITO') ||
+      value === 'DONE'
+    ) return 'state-finished';
 
     if (value.includes('REST') || value.includes('RIPOSO') || value.includes('DESCANSO')) {
       return 'state-rest';
     }
-    if (value.includes('WORK') || value.includes('LAVORO') || value.includes('TRABAJO')) {
-      return 'state-work';
-    }
-    if (value.includes('PAUSA') || value.includes('PAUSED')) {
-      return 'state-paused';
-    }
-    if (value.includes('PREPAR') || value.includes('GET READY')) {
-      return 'state-prep';
-    }
-    if (value === 'OTC' || value.includes('OVER TIME CAP') || value.includes('OLTRE TIME CAP')) {
-      return 'state-otc';
-    }
+
     if (
-      value.includes('COMPLET') ||
-      value.includes('FINISH') ||
-      value === 'DONE'
-    ) {
-      return 'state-finished';
-    }
+      value.includes('PREPAR') ||
+      value.includes('GET READY') ||
+      value === 'PREP'
+    ) return 'state-prep';
+
+    if (value.includes('PAUSA') || value.includes('PAUSED')) return 'state-paused';
+
     if (
-      value.includes('CONFIGURA') ||
-      value.includes('SET UP') ||
-      value.includes('CONFIGURE')
-    ) {
-      return 'state-config';
-    }
+      value.includes('WORK') ||
+      value.includes('LAVORO') ||
+      value.includes('TRABAJO')
+    ) return 'state-work';
+
     return 'state-idle';
   }
 
-  function parseTotalTime(rawFooter) {
-    const normalized = normalize(rawFooter);
-    const match = normalized.match(
-      /(?:TEMPO TOTALE|TOTAL TIME|TIEMPO TOTAL)\s+([0-9]+:[0-9]{2})/
-    );
-    return match ? match[1] : null;
+  function setState(statusText) {
+    screen.className = `timer-screen ${stateFor(statusText)}`;
+  }
+
+  function classifyFooterPart(value) {
+    const n = normalize(value);
+    if (n.startsWith('BLOCK') || n.startsWith('BLOCCO') || n.startsWith('BLOQUE')) {
+      return 'footer-block';
+    }
+    if (
+      n.startsWith('ROUND') ||
+      n.startsWith('RONDA') ||
+      n.startsWith('INTERVALLO') ||
+      n.startsWith('INTERVALO')
+    ) {
+      return 'footer-round';
+    }
+    return 'footer-mode';
+  }
+
+  function renderFooter(rawFooter, rawStatus) {
+    const fullStatus = String(rawStatus || '').trim();
+    const normalizedStatus = normalize(fullStatus);
+
+    /*
+     * If the Android sender carries phase information in the status,
+     * display only the fraction at top and FASE at bottom.
+     */
+    const phaseMatch = normalizedStatus.match(/(?:FASE|PHASE)\s+(\d+)\s*\/\s*(\d+)/);
+    if (phaseMatch) {
+      topCounter.textContent = `${phaseMatch[1]}/${phaseMatch[2]}`;
+      topCounter.classList.remove('hidden');
+      footer.textContent = normalizedStatus.includes('PHASE') ? 'PHASE' : 'FASE';
+      footer.className = 'footer phase-footer';
+
+      const baseStatus = fullStatus.split('·')[0].trim();
+      status.textContent = baseStatus || fullStatus;
+      setState(baseStatus || fullStatus);
+      return;
+    }
+
+    topCounter.textContent = '';
+    topCounter.classList.add('hidden');
+    footer.className = 'footer';
+
+    const parts = String(rawFooter || '')
+      .split('•')
+      .map(part => part.trim())
+      .filter(Boolean);
+
+    if (!parts.length) {
+      footer.textContent = 'TIMER';
+      return;
+    }
+
+    footer.textContent = '';
+    parts.forEach((part, index) => {
+      if (index) {
+        const sep = document.createElement('span');
+        sep.className = 'footer-separator';
+        sep.textContent = '  |  ';
+        footer.appendChild(sep);
+      }
+      const node = document.createElement('span');
+      node.className = classifyFooterPart(part);
+      node.textContent = part;
+      footer.appendChild(node);
+    });
   }
 
   function sync() {
-    const rawStatus = sourceStatus.textContent || '';
-    const rawFooter = sourceFooter.textContent || '';
+    const statusText = sourceStatus.textContent || '';
     const timerText = sourceTimer.textContent || '';
+    const footerText = sourceFooter.textContent || '';
     const capText = sourceTimeCap.textContent || '';
 
-    const interval = parseInterval(rawStatus);
-    const round = parseRound(rawFooter);
-    const totalTime = parseTotalTime(rawFooter);
-    const clean = cleanStatus(rawStatus);
-
-    screen.className = `timer-screen ${visualState(rawStatus)}`;
-    status.textContent = clean;
+    status.textContent = statusText;
+    setState(statusText);
     renderDigits(timerText);
-
-    // Structured Intervals new protocol:
-    // status = WORK/REST · INTERVALLO n/N
-    // footer = ROUND x/y
-    if (interval) {
-      screen.classList.add('has-interval');
-
-      // Big red current INTERVAL number on the left.
-      intervalNumber.textContent = String(interval.current).padStart(2, '0');
-      intervalBadge.classList.remove('hidden');
-
-      // No extra blue counter at the top.
-      topCounter.textContent = '';
-      topCounter.classList.add('hidden');
-
-      // Bottom information:
-      // ROUND mode -> ROUND x/y · INTERVALLI N
-      // TIME mode  -> TEMPO TOTALE mm:ss · INTERVALLI N
-      if (round) {
-        footer.className = 'footer intervals-total-footer';
-        footer.classList.remove('hidden');
-        footer.innerHTML =
-          `<span class="intervals-primary">ROUND ${round.current}/${round.total}</span>` +
-          `<span class="intervals-separator"> · </span>` +
-          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
-      } else if (totalTime) {
-        footer.className = 'footer intervals-total-footer';
-        footer.classList.remove('hidden');
-        footer.innerHTML =
-          `<span class="intervals-primary">TEMPO TOTALE ${totalTime}</span>` +
-          `<span class="intervals-separator"> · </span>` +
-          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
-      } else {
-        footer.className = 'footer intervals-total-footer';
-        footer.classList.remove('hidden');
-        footer.innerHTML =
-          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
-      }
-    } else {
-      intervalBadge.classList.add('hidden');
-      topCounter.textContent = '';
-      topCounter.classList.add('hidden');
-
-      // Other timers are deliberately untouched for now.
-      const sourceFooterText = String(rawFooter).trim();
-      footer.textContent = sourceFooterText;
-      footer.className = 'footer';
-      footer.classList.toggle('hidden', !sourceFooterText);
-    }
+    renderFooter(footerText, statusText);
 
     timeCap.textContent = capText;
     timeCap.classList.toggle('hidden', !String(capText).trim());

@@ -20,12 +20,6 @@
     <div id="footerText">TIMER</div>
   </div>
 
-  <!-- STANDBY LAYER: visible only when no timer is active. -->
-  <section id="standbyScreen" class="standby-screen" aria-label="IRON WOD standby">
-    <img class="standby-logo" src="iron_wod_logo.png" alt="IRON WOD">
-    <div id="standbyClock" class="standby-clock">00:00:00</div>
-  </section>
-
   <!-- VISUAL-ONLY LED MIRROR -->
   <main id="ledScreen" class="timer-screen state-idle">
     <div id="ledTopCounter" class="top-counter hidden"></div>
@@ -40,6 +34,5 @@
 
   <!-- Visual mirror only; it has no Cast namespace/listener/context code. -->
   <script src="led-display.js"></script>
-  <script src="standby.js"></script>
 </body>
 </html>

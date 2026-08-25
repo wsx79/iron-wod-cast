@@ -21,7 +21,6 @@
   let activeVoiceAudio = null;
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
-  let lastRoundAlertKey = '';
   const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
@@ -408,8 +407,6 @@
     const previousPreparing = isPreparingStatus(prev);
     const activeWork = isActiveWorkStatus(status);
     const restStatus = isRestStatus(status);
-    const structuredIntervalStatus =
-      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+\d+\s*\/\s*\d+/.test(status);
 
     const configuringOrReady =
       status.includes('CONFIGURA') ||
@@ -433,9 +430,8 @@
       mode === 'SOUNDS' &&
       preparing &&
       timer !== lastTimer &&
-      /^[1-3]$/.test(timer)
+      /^\d+$/.test(timer)
     ) {
-      // Bundled MP3 first; playSoundAsset already falls back to WebAudio.
       countdownCue();
     }
 
@@ -461,17 +457,13 @@
         } else {
           finishCue();
         }
-      } else if (!structuredIntervalStatus && restStatus) {
+      } else if (restStatus) {
         if (mode === 'VOICE') {
           if (!playVoiceAsset('rest', voiceLanguage)) restCue();
         } else {
           restCue();
         }
-      } else if (
-        !structuredIntervalStatus &&
-        activeWork &&
-        (previousPreparing || isRestStatus(prev))
-      ) {
+      } else if (activeWork && (previousPreparing || isRestStatus(prev))) {
         if (mode === 'VOICE') {
           const cueName = previousPreparing ? 'go' : 'work';
           if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
@@ -570,46 +562,6 @@
     return raw;
   }
 
-  function maybePlayIntervalChangeAlert(statusText, audioMode, voiceLanguage) {
-    const normalized = normalizeStatus(statusText);
-    const match = normalized.match(
-      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
-    );
-
-    if (!match) {
-      lastRoundAlertKey = '';
-      return false;
-    }
-
-    const key = `${match[1]}/${match[2]}`;
-    if (key === lastRoundAlertKey) return true;
-    lastRoundAlertKey = key;
-
-    const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
-    const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(rawMode)
-      ? rawMode
-      : 'SOUNDS';
-
-    if (mode === 'SILENT') return true;
-
-    const rest = isRestStatus(normalized);
-    const cueName = rest ? 'rest' : 'work';
-
-    if (mode === 'VOICE') {
-      if (!playVoiceAsset(cueName, voiceLanguage || 'it')) {
-        const spoken = speakCue(
-          localizedFallbackText(cueName, voiceLanguage || 'it'),
-          voiceLanguage || 'it',
-          true
-        );
-        if (!spoken) playSoundAsset(cueName);
-      }
-    } else {
-      playSoundAsset(cueName);
-    }
-    return true;
-  }
-
   function updateTimer(data) {
     const resolved = resolveStatusAndTimeCap(data);
     const statusText = compactCompletionStatus(resolved.statusText);
@@ -619,12 +571,6 @@
     maybePlayCue(
       statusText,
       timerText,
-      data.audioMode || 'SOUNDS',
-      data.voiceLanguage || 'it'
-    );
-
-    maybePlayIntervalChangeAlert(
-      statusText,
       data.audioMode || 'SOUNDS',
       data.voiceLanguage || 'it'
     );
@@ -660,7 +606,6 @@
     lastTimer = '';
     lastAudioMode = '';
     lastVoiceLanguage = '';
-    lastRoundAlertKey = '';
   }
 
 
