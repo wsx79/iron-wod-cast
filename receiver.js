@@ -18,6 +18,18 @@
   const soundPlayer = new Audio();
   soundPlayer.preload = 'auto';
   soundPlayer.volume = 1.0;
+
+  // Chromecast can miss very short MP3s when src/load/play are changed
+  // on the same Audio element at the instant of the cue. Keep these two
+  // short cues permanently loaded on dedicated players.
+  const countdownPlayer = new Audio();
+  countdownPlayer.preload = 'auto';
+  countdownPlayer.volume = 1.0;
+
+  const restPlayer = new Audio();
+  restPlayer.preload = 'auto';
+  restPlayer.volume = 1.0;
+
   let activeVoiceAudio = null;
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
@@ -154,9 +166,56 @@
       soundPlayer.pause();
       soundPlayer.currentTime = 0;
     } catch (_) {}
+
+    try {
+      countdownPlayer.pause();
+      countdownPlayer.currentTime = 0;
+    } catch (_) {}
+
+    try {
+      restPlayer.pause();
+      restPlayer.currentTime = 0;
+    } catch (_) {}
+  }
+
+  function playDedicatedShortCue(player, name) {
+    try {
+      player.pause();
+      player.currentTime = 0;
+      player.volume = 1.0;
+
+      const result = player.play();
+      if (result && typeof result.catch === 'function') {
+        result.catch(error => {
+          console.warn(
+            '[IRON WOD audio] dedicated short cue rejected:',
+            name,
+            error
+          );
+          playToneFallback(name);
+        });
+      }
+      return true;
+    } catch (error) {
+      console.warn(
+        '[IRON WOD audio] dedicated short cue exception:',
+        name,
+        error
+      );
+      playToneFallback(name);
+      return false;
+    }
   }
 
   function playSoundAsset(name) {
+    if (name === 'countdown') {
+      return playDedicatedShortCue(countdownPlayer, 'countdown');
+    }
+
+    if (name === 'rest') {
+      return playDedicatedShortCue(restPlayer, 'rest');
+    }
+
     const url = soundUrl(name);
 
     try {
@@ -280,8 +339,14 @@
       voicePlayer.preload = 'auto';
       soundPlayer.preload = 'auto';
 
-      soundPlayer.src = soundUrl('countdown');
+      soundPlayer.src = soundUrl('work');
       soundPlayer.load();
+
+      countdownPlayer.src = soundUrl('countdown');
+      countdownPlayer.load();
+
+      restPlayer.src = soundUrl('rest');
+      restPlayer.load();
 
       voicePlayer.src = voiceUrl('1', 'it');
       voicePlayer.load();
