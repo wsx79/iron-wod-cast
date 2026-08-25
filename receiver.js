@@ -433,7 +433,7 @@
       mode === 'SOUNDS' &&
       preparing &&
       timer !== lastTimer &&
-      /^\d+$/.test(timer)
+      /^[1-3]$/.test(timer)
     ) {
       // Bundled MP3 first; playSoundAsset already falls back to WebAudio.
       countdownCue();
@@ -461,7 +461,7 @@
         } else {
           finishCue();
         }
-      } else if (restStatus) {
+      } else if (!structuredIntervalStatus && restStatus) {
         if (mode === 'VOICE') {
           if (!playVoiceAsset('rest', voiceLanguage)) restCue();
         } else {
@@ -572,11 +572,6 @@
 
   function maybePlayIntervalChangeAlert(statusText, audioMode, voiceLanguage) {
     const normalized = normalizeStatus(statusText);
-
-    // REST is handled by the original generic audio path.
-    // This helper only supplements WORK interval transitions.
-    if (!isActiveWorkStatus(normalized)) return false;
-
     const match = normalized.match(
       /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
     );
