@@ -16,6 +16,9 @@
   let intervalBadge = document.getElementById('ledIntervalBadge');
   let intervalNumber = document.getElementById('ledIntervalNumber');
 
+  // Visual mode memory only. This never touches Cast transport/audio.
+  let activeVisualMode = '';
+
   // Older MirrorSafe index may not have the badge. Create it safely.
   if (!intervalBadge) {
     intervalBadge = document.createElement('div');
@@ -172,6 +175,57 @@
     return match ? match[1] : null;
   }
 
+  function isAmrapStatus(rawStatus) {
+    return normalize(cleanStatus(rawStatus)) === 'AMRAP';
+  }
+
+  function isIdleSource(rawStatus, rawTimer, rawFooter) {
+    return normalize(rawStatus) === 'IRON WOD' &&
+      String(rawTimer || '').trim() === '00:00' &&
+      normalize(rawFooter) === 'TIMER';
+  }
+
+  function renderAmrapFooter(rawFooter) {
+    const text = String(rawFooter || '').trim();
+    const normalized = normalize(text);
+
+    const patterns = [
+      /^(ROUND COMPLETATI)\s+(\d+)$/,
+      /^(ROUNDS COMPLETED)\s+(\d+)$/,
+      /^(RONDAS COMPLETADAS)\s+(\d+)$/,
+      /^(RONDAS COMPLETADOS)\s+(\d+)$/
+    ];
+
+    let match = null;
+    for (const pattern of patterns) {
+      match = normalized.match(pattern);
+      if (match) break;
+    }
+
+    footer.className = 'footer amrap-footer';
+    footer.classList.toggle('hidden', !text);
+
+    if (!text) {
+      footer.textContent = '';
+      return;
+    }
+
+    if (match) {
+      const numberMatch = text.match(/(\d+)\s*$/);
+      const number = numberMatch ? numberMatch[1] : match[2];
+      const label = numberMatch
+        ? text.slice(0, numberMatch.index).trim()
+        : match[1];
+
+      footer.innerHTML =
+        `<span class="amrap-primary">${label}</span>` +
+        `<span class="amrap-count">${number}</span>`;
+      return;
+    }
+
+    footer.textContent = text;
+  }
+
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
     const rawFooter = sourceFooter.textContent || '';
@@ -182,6 +236,14 @@
     const round = parseRound(rawFooter);
     const totalTime = parseTotalTime(rawFooter);
     const clean = cleanStatus(rawStatus);
+
+    if (isIdleSource(rawStatus, timerText, rawFooter)) {
+      activeVisualMode = '';
+    } else if (interval) {
+      activeVisualMode = 'INTERVALS';
+    } else if (isAmrapStatus(rawStatus)) {
+      activeVisualMode = 'AMRAP';
+    }
 
     screen.className = `timer-screen ${visualState(rawStatus)}`;
     status.textContent = clean;
@@ -224,6 +286,14 @@
         footer.innerHTML =
           `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
       }
+    } else if (activeVisualMode === 'AMRAP') {
+      screen.classList.add('has-amrap');
+
+      intervalBadge.classList.add('hidden');
+      topCounter.textContent = '';
+      topCounter.classList.add('hidden');
+
+      renderAmrapFooter(rawFooter);
     } else {
       intervalBadge.classList.add('hidden');
       topCounter.textContent = '';

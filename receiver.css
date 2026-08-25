@@ -482,3 +482,99 @@ html, body {
   font-variant-numeric: tabular-nums;
   text-shadow: 0 0 5px currentColor, 0 0 15px rgba(255,255,255,.25);
 }
+
+
+/* ================================================================
+   LED v19 — AMRAP adopts the frozen Structured Intervals visual base
+   Visual-only. No receiver/audio/transport changes.
+   ================================================================ */
+
+.timer-screen.has-amrap .top-counter {
+  display: none !important;
+}
+
+.timer-screen.has-amrap .status {
+  top: 1.2vh !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  text-align: center !important;
+  transform: none !important;
+  font-size: clamp(66px, 9vw, 174px) !important;
+  line-height: .95 !important;
+}
+
+.timer-screen.has-amrap.state-idle .status,
+.timer-screen.has-amrap.state-work .status {
+  color: var(--green) !important;
+}
+
+/* AMRAP main clock uses the same huge LED proportions as Intervals,
+   but spans the whole screen because there is no interval number badge. */
+.timer-screen.has-amrap .timer {
+  left: 1vw !important;
+  right: 1vw !important;
+  top: 50% !important;
+  height: min(40vw, 56vh) !important;
+  gap: min(.12vw, 2px) !important;
+  color: var(--white) !important;
+}
+
+.timer-screen.has-amrap .led-char {
+  width: min(21vw, 35vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+.timer-screen.has-amrap .led-colon {
+  width: min(3.25vw, 5.1vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+.timer-screen.has-amrap.state-paused .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-amrap.state-paused .timer {
+  color: var(--white) !important;
+}
+
+.timer-screen.has-amrap.state-prep .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-amrap.state-prep .timer {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-amrap.state-finished .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.has-amrap.state-finished .timer {
+  left: 2vw !important;
+  right: 2vw !important;
+  color: var(--white) !important;
+}
+
+.timer-screen.has-amrap .footer.amrap-footer {
+  left: 1vw !important;
+  right: 1vw !important;
+  bottom: .8vh !important;
+  width: auto !important;
+  text-align: center !important;
+  color: var(--muted) !important;
+  font-size: clamp(38px, 4.15vw, 78px) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: .025em !important;
+  white-space: nowrap !important;
+}
+
+.timer-screen.has-amrap .footer.amrap-footer .amrap-primary {
+  color: #38d9d0 !important;
+}
+
+.timer-screen.has-amrap .footer.amrap-footer .amrap-count {
+  color: var(--red) !important;
+  padding-left: .16em !important;
+}
