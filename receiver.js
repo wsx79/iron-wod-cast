@@ -408,6 +408,8 @@
     const previousPreparing = isPreparingStatus(prev);
     const activeWork = isActiveWorkStatus(status);
     const restStatus = isRestStatus(status);
+    const structuredIntervalStatus =
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+\d+\s*\/\s*\d+/.test(status);
 
     const configuringOrReady =
       status.includes('CONFIGURA') ||
@@ -466,6 +468,7 @@
           restCue();
         }
       } else if (
+        !structuredIntervalStatus &&
         activeWork &&
         (previousPreparing || isRestStatus(prev))
       ) {
@@ -567,53 +570,49 @@
     return raw;
   }
 
-  function maybePlayIntervalChangeAlert(
-    statusText,
-    previousStatusText,
-    audioMode,
-    voiceLanguage
-  ) {
-    const current = normalizeStatus(statusText);
-    const previous = normalizeStatus(previousStatusText);
+  function maybePlayIntervalChangeAlert(statusText, audioMode, voiceLanguage) {
+    const normalized = normalizeStatus(statusText);
 
-    // The normal audio path already handles PREP -> WORK, REST -> WORK and REST.
-    // This helper exists ONLY for consecutive WORK intervals (WORK -> WORK).
-    if (!isActiveWorkStatus(current) || !isActiveWorkStatus(previous)) {
-      return;
+    // REST is handled by the original generic audio path.
+    // This helper only supplements WORK interval transitions.
+    if (!isActiveWorkStatus(normalized)) return false;
+
+    const match = normalized.match(
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
+    );
+
+    if (!match) {
+      lastRoundAlertKey = '';
+      return false;
     }
 
-    const currentMatch = current.match(
-      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
-    );
-    const previousMatch = previous.match(
-      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
-    );
-
-    if (!currentMatch || !previousMatch) return;
-
-    const currentKey = `${currentMatch[1]}/${currentMatch[2]}`;
-    const previousKey = `${previousMatch[1]}/${previousMatch[2]}`;
-    if (currentKey === previousKey) return;
+    const key = `${match[1]}/${match[2]}`;
+    if (key === lastRoundAlertKey) return true;
+    lastRoundAlertKey = key;
 
     const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
     const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(rawMode)
       ? rawMode
       : 'SOUNDS';
 
-    if (mode === 'SILENT') return;
+    if (mode === 'SILENT') return true;
+
+    const rest = isRestStatus(normalized);
+    const cueName = rest ? 'rest' : 'work';
 
     if (mode === 'VOICE') {
-      if (!playVoiceAsset('work', voiceLanguage || 'it')) {
+      if (!playVoiceAsset(cueName, voiceLanguage || 'it')) {
         const spoken = speakCue(
-          localizedFallbackText('work', voiceLanguage || 'it'),
+          localizedFallbackText(cueName, voiceLanguage || 'it'),
           voiceLanguage || 'it',
           true
         );
-        if (!spoken) workCue();
+        if (!spoken) playSoundAsset(cueName);
       }
     } else {
-      workCue();
+      playSoundAsset(cueName);
     }
+    return true;
   }
 
   function updateTimer(data) {
@@ -621,8 +620,6 @@
     const statusText = compactCompletionStatus(resolved.statusText);
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
-
-    const previousStatusText = lastStatus;
 
     maybePlayCue(
       statusText,
@@ -633,7 +630,6 @@
 
     maybePlayIntervalChangeAlert(
       statusText,
-      previousStatusText,
       data.audioMode || 'SOUNDS',
       data.voiceLanguage || 'it'
     );
