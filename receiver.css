@@ -437,3 +437,48 @@ html, body {
   color: var(--muted) !important;
   padding: 0 .35em;
 }
+
+
+/* ================================================================
+   STANDBY v12 — shown only when no timer is active
+   ================================================================ */
+.standby-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7vh;
+  box-sizing: border-box;
+  background: #000;
+  overflow: hidden;
+}
+
+.standby-screen.hidden {
+  display: none !important;
+}
+
+.timer-screen.standby-hidden {
+  visibility: hidden !important;
+}
+
+.standby-logo {
+  display: block;
+  width: min(58vw, 980px);
+  max-height: 25vh;
+  object-fit: contain;
+}
+
+.standby-clock {
+  color: #fff;
+  font-family: "Courier New", monospace;
+  font-size: clamp(130px, 18vw, 350px);
+  font-weight: 700;
+  line-height: .92;
+  letter-spacing: -.045em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 5px currentColor, 0 0 15px rgba(255,255,255,.25);
+}
