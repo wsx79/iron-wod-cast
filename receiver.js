@@ -408,6 +408,8 @@
     const previousPreparing = isPreparingStatus(prev);
     const activeWork = isActiveWorkStatus(status);
     const restStatus = isRestStatus(status);
+    const structuredIntervalStatus =
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+\d+\s*\/\s*\d+/.test(status);
 
     const configuringOrReady =
       status.includes('CONFIGURA') ||
@@ -433,8 +435,7 @@
       timer !== lastTimer &&
       /^[1-3]$/.test(timer)
     ) {
-      // Use the bundled countdown MP3. playSoundAsset() already falls back
-      // to WebAudio if HTMLAudio cannot play on the Cast receiver.
+      // Bundled MP3 first; playSoundAsset already falls back to WebAudio.
       countdownCue();
     }
 
@@ -460,13 +461,17 @@
         } else {
           finishCue();
         }
-      } else if (restStatus) {
+      } else if (!structuredIntervalStatus && restStatus) {
         if (mode === 'VOICE') {
           if (!playVoiceAsset('rest', voiceLanguage)) restCue();
         } else {
           restCue();
         }
-      } else if (activeWork && (previousPreparing || isRestStatus(prev))) {
+      } else if (
+        !structuredIntervalStatus &&
+        activeWork &&
+        (previousPreparing || isRestStatus(prev))
+      ) {
         if (mode === 'VOICE') {
           const cueName = previousPreparing ? 'go' : 'work';
           if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
@@ -565,8 +570,6 @@
     return raw;
   }
 
-  let lastIntervalPhase = '';
-
   function maybePlayIntervalChangeAlert(statusText, audioMode, voiceLanguage) {
     const normalized = normalizeStatus(statusText);
     const match = normalized.match(
@@ -575,41 +578,36 @@
 
     if (!match) {
       lastRoundAlertKey = '';
-      lastIntervalPhase = '';
-      return;
+      return false;
     }
 
     const key = `${match[1]}/${match[2]}`;
-    if (key === lastRoundAlertKey) return;
-
-    const phase = isRestStatus(normalized)
-      ? 'REST'
-      : (isActiveWorkStatus(normalized) ? 'WORK' : '');
-    const previousKey = lastRoundAlertKey;
-    const previousPhase = lastIntervalPhase;
-
+    if (key === lastRoundAlertKey) return true;
     lastRoundAlertKey = key;
-    lastIntervalPhase = phase;
-
-    // The normal status transition path already plays WORK/REST when the
-    // phase itself changes. This extra cue is only needed for transitions
-    // such as WORK -> WORK or REST -> REST between consecutive intervals.
-    if (!previousKey || !phase || phase !== previousPhase) return;
 
     const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
     const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(rawMode)
       ? rawMode
       : 'SOUNDS';
-    if (mode === 'SILENT') return;
 
-    const cueName = phase === 'REST' ? 'rest' : 'work';
+    if (mode === 'SILENT') return true;
+
+    const rest = isRestStatus(normalized);
+    const cueName = rest ? 'rest' : 'work';
+
     if (mode === 'VOICE') {
-      if (!playVoiceAsset(cueName, voiceLanguage)) {
-        fallbackSoundForCue(cueName);
+      if (!playVoiceAsset(cueName, voiceLanguage || 'it')) {
+        const spoken = speakCue(
+          localizedFallbackText(cueName, voiceLanguage || 'it'),
+          voiceLanguage || 'it',
+          true
+        );
+        if (!spoken) playSoundAsset(cueName);
       }
     } else {
       playSoundAsset(cueName);
     }
+    return true;
   }
 
   function updateTimer(data) {
@@ -663,7 +661,6 @@
     lastAudioMode = '';
     lastVoiceLanguage = '';
     lastRoundAlertKey = '';
-    lastIntervalPhase = '';
   }
 
 
