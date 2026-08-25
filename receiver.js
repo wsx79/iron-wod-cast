@@ -18,18 +18,6 @@
   const soundPlayer = new Audio();
   soundPlayer.preload = 'auto';
   soundPlayer.volume = 1.0;
-
-  // Chromecast can miss very short MP3s when src/load/play are changed
-  // on the same Audio element at the instant of the cue. Keep these two
-  // short cues permanently loaded on dedicated players.
-  const countdownPlayer = new Audio();
-  countdownPlayer.preload = 'auto';
-  countdownPlayer.volume = 1.0;
-
-  const restPlayer = new Audio();
-  restPlayer.preload = 'auto';
-  restPlayer.volume = 1.0;
-
   let activeVoiceAudio = null;
   let lastAudioMode = '';
   let lastVoiceLanguage = '';
@@ -166,56 +154,9 @@
       soundPlayer.pause();
       soundPlayer.currentTime = 0;
     } catch (_) {}
-
-    try {
-      countdownPlayer.pause();
-      countdownPlayer.currentTime = 0;
-    } catch (_) {}
-
-    try {
-      restPlayer.pause();
-      restPlayer.currentTime = 0;
-    } catch (_) {}
-  }
-
-  function playDedicatedShortCue(player, name) {
-    try {
-      player.pause();
-      player.currentTime = 0;
-      player.volume = 1.0;
-
-      const result = player.play();
-      if (result && typeof result.catch === 'function') {
-        result.catch(error => {
-          console.warn(
-            '[IRON WOD audio] dedicated short cue rejected:',
-            name,
-            error
-          );
-          playToneFallback(name);
-        });
-      }
-      return true;
-    } catch (error) {
-      console.warn(
-        '[IRON WOD audio] dedicated short cue exception:',
-        name,
-        error
-      );
-      playToneFallback(name);
-      return false;
-    }
   }
 
   function playSoundAsset(name) {
-    if (name === 'countdown') {
-      return playDedicatedShortCue(countdownPlayer, 'countdown');
-    }
-
-    if (name === 'rest') {
-      return playDedicatedShortCue(restPlayer, 'rest');
-    }
-
     const url = soundUrl(name);
 
     try {
@@ -339,14 +280,8 @@
       voicePlayer.preload = 'auto';
       soundPlayer.preload = 'auto';
 
-      soundPlayer.src = soundUrl('work');
+      soundPlayer.src = soundUrl('countdown');
       soundPlayer.load();
-
-      countdownPlayer.src = soundUrl('countdown');
-      countdownPlayer.load();
-
-      restPlayer.src = soundUrl('rest');
-      restPlayer.load();
 
       voicePlayer.src = voiceUrl('1', 'it');
       voicePlayer.load();
@@ -473,8 +408,6 @@
     const previousPreparing = isPreparingStatus(prev);
     const activeWork = isActiveWorkStatus(status);
     const restStatus = isRestStatus(status);
-    const structuredIntervalStatus =
-      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+\d+\s*\/\s*\d+/.test(status);
 
     const configuringOrReady =
       status.includes('CONFIGURA') ||
@@ -498,7 +431,7 @@
       mode === 'SOUNDS' &&
       preparing &&
       timer !== lastTimer &&
-      /^[1-3]$/.test(timer)
+      /^\d+$/.test(timer)
     ) {
       // Bundled MP3 first; playSoundAsset already falls back to WebAudio.
       countdownCue();
@@ -526,14 +459,13 @@
         } else {
           finishCue();
         }
-      } else if (!structuredIntervalStatus && restStatus) {
+      } else if (restStatus) {
         if (mode === 'VOICE') {
           if (!playVoiceAsset('rest', voiceLanguage)) restCue();
         } else {
           restCue();
         }
       } else if (
-        !structuredIntervalStatus &&
         activeWork &&
         (previousPreparing || isRestStatus(prev))
       ) {
@@ -635,44 +567,53 @@
     return raw;
   }
 
-  function maybePlayIntervalChangeAlert(statusText, audioMode, voiceLanguage) {
-    const normalized = normalizeStatus(statusText);
-    const match = normalized.match(
+  function maybePlayIntervalChangeAlert(
+    statusText,
+    previousStatusText,
+    audioMode,
+    voiceLanguage
+  ) {
+    const current = normalizeStatus(statusText);
+    const previous = normalizeStatus(previousStatusText);
+
+    // The normal audio path already handles PREP -> WORK, REST -> WORK and REST.
+    // This helper exists ONLY for consecutive WORK intervals (WORK -> WORK).
+    if (!isActiveWorkStatus(current) || !isActiveWorkStatus(previous)) {
+      return;
+    }
+
+    const currentMatch = current.match(
+      /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
+    );
+    const previousMatch = previous.match(
       /(?:INTERVALLO|INTERVALO|INTERVAL)\s+(\d+)\s*\/\s*(\d+)/
     );
 
-    if (!match) {
-      lastRoundAlertKey = '';
-      return false;
-    }
+    if (!currentMatch || !previousMatch) return;
 
-    const key = `${match[1]}/${match[2]}`;
-    if (key === lastRoundAlertKey) return true;
-    lastRoundAlertKey = key;
+    const currentKey = `${currentMatch[1]}/${currentMatch[2]}`;
+    const previousKey = `${previousMatch[1]}/${previousMatch[2]}`;
+    if (currentKey === previousKey) return;
 
     const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
     const mode = ['VOICE', 'SOUNDS', 'SILENT'].includes(rawMode)
       ? rawMode
       : 'SOUNDS';
 
-    if (mode === 'SILENT') return true;
-
-    const rest = isRestStatus(normalized);
-    const cueName = rest ? 'rest' : 'work';
+    if (mode === 'SILENT') return;
 
     if (mode === 'VOICE') {
-      if (!playVoiceAsset(cueName, voiceLanguage || 'it')) {
+      if (!playVoiceAsset('work', voiceLanguage || 'it')) {
         const spoken = speakCue(
-          localizedFallbackText(cueName, voiceLanguage || 'it'),
+          localizedFallbackText('work', voiceLanguage || 'it'),
           voiceLanguage || 'it',
           true
         );
-        if (!spoken) playSoundAsset(cueName);
+        if (!spoken) workCue();
       }
     } else {
-      playSoundAsset(cueName);
+      workCue();
     }
-    return true;
   }
 
   function updateTimer(data) {
@@ -680,6 +621,8 @@
     const statusText = compactCompletionStatus(resolved.statusText);
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
+
+    const previousStatusText = lastStatus;
 
     maybePlayCue(
       statusText,
@@ -690,6 +633,7 @@
 
     maybePlayIntervalChangeAlert(
       statusText,
+      previousStatusText,
       data.audioMode || 'SOUNDS',
       data.voiceLanguage || 'it'
     );
