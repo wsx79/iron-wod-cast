@@ -482,3 +482,15 @@ html, body {
   font-variant-numeric: tabular-nums;
   text-shadow: 0 0 5px currentColor, 0 0 15px rgba(255,255,255,.25);
 }
+
+
+/* ================================================================
+   LED v13 — Structured Intervals footer tuning
+   ================================================================ */
+.timer-screen.has-interval .footer.intervals-total-footer {
+  font-size: clamp(38px, 4.15vw, 78px) !important;
+}
+
+.timer-screen.has-interval .footer.intervals-total-footer .intervals-separator {
+  padding: 0 .16em !important;
+}

@@ -433,14 +433,9 @@
       timer !== lastTimer &&
       /^[1-3]$/.test(timer)
     ) {
-      // Direct WebAudio preparation beep: do not depend on HTMLAudio
-      // autoplay/media state. One distinct beep for every 3 -> 2 -> 1 step.
-      const countdownNumber = Number(timer);
-      const frequency =
-        countdownNumber === 3 ? 880 :
-        countdownNumber === 2 ? 980 :
-        1120;
-      tone(frequency, 150, 0.24);
+      // Use the packaged receiver asset first. playSoundAsset() already
+      // falls back to WebAudio if HTMLAudio is rejected or unavailable.
+      playSoundAsset('countdown');
     }
 
     if (
@@ -588,7 +583,18 @@
     const mode = String(audioMode || 'SOUNDS').trim().toUpperCase();
     if (mode === 'SILENT') return;
 
-    // Short alert on every interval transition, including WORK -> WORK.
+    if (mode === 'SOUNDS') {
+      // Every interval transition is audible, including WORK -> WORK.
+      if (isRestStatus(normalized)) {
+        playSoundAsset('rest');
+      } else {
+        playSoundAsset('work');
+      }
+      return;
+    }
+
+    // VOICE transitions are handled by maybePlayCue when the state changes;
+    // this short tone also marks WORK -> WORK interval changes.
     tone(1180, 120, 0.20);
   }
 
