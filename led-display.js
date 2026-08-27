@@ -346,6 +346,16 @@
     const roundsActive = activeVisualMode === 'ROUNDS' && round && state !== 'state-prep';
     const forTimeActive = activeVisualMode === 'FORTIME' && state !== 'state-prep';
     const amrapActive = activeVisualMode === 'AMRAP' && state !== 'state-prep';
+    // PLAIN's clock color/alignment rules use !important (needed to beat the
+    // generic family rules), which also beats the base orange-during-prep
+    // rule. Standalone Countdown/Count Up never actually hit PLAIN during
+    // their own prep (isPlainTimerStatus only matches the literal running
+    // status), so this never mattered before — but a structured/library
+    // WOD's round-less sub-block DOES carry its block-type word in the
+    // footer from the very start, including during prep. Gate it exactly
+    // like every other mode so prep always falls through to the shared
+    // centered/orange treatment.
+    const plainActive = activeVisualMode === 'PLAIN' && state !== 'state-prep';
 
     // Structured Intervals new protocol:
     // status = WORK/REST · INTERVALLO n/N
@@ -442,7 +452,7 @@
       // Round count now lives in the left badge; the bottom footer is unused.
       footer.textContent = '';
       footer.className = 'footer hidden';
-    } else if (activeVisualMode === 'PLAIN') {
+    } else if (plainActive) {
       screen.classList.add('has-plain');
 
       // No rounds at all (Countdown/Count Up, or the same sub-block chained
