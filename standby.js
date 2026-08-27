@@ -11,17 +11,23 @@
   const dateLine = document.getElementById('standbyDate');
   const timerScreen = document.getElementById('ledScreen');
 
-  // Uses the TV/Chromecast device's own locale (not the phone app's
-  // language), since the standby screen has no active session to read a
-  // language from. "lunedi 27 agosto 2026"-style names come for free from
-  // Intl in whatever language the device is set to.
-  const localeTag = navigator.language || 'it-IT';
-  const weekdayFormatter = new Intl.DateTimeFormat(localeTag, { weekday: 'long' });
-  const dateFormatter = new Intl.DateTimeFormat(localeTag, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  // The standby screen has no active session of its own, so it can't read
+  // the app's language the normal way. receiver.js remembers the most
+  // recent voiceLanguage from a real timer message in localStorage; fall
+  // back to the TV/Chromecast device's own locale only if no session has
+  // ever reached this receiver yet.
+  function resolveLocaleTag() {
+    let stored = null;
+    try { stored = localStorage.getItem('ironWodLastVoiceLanguage'); } catch (_) {}
+    if (stored === 'it') return 'it-IT';
+    if (stored === 'es') return 'es-ES';
+    if (stored === 'en') return 'en-US';
+    return navigator.language || 'it-IT';
+  }
+
+  let weekdayFormatter = null;
+  let dateFormatter = null;
+  let lastLocaleTag = '';
 
   function capitalize(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -53,10 +59,21 @@
     const ss = String(now.getSeconds()).padStart(2, '0');
     clock.textContent = `${hh}:${mm}:${ss}`;
 
-    // Weekday/date only change once a day; skip re-formatting on every tick.
-    const dateKey = now.toDateString();
+    // Weekday/date only change once a day (or when the app's language
+    // changes); skip re-formatting on every tick otherwise.
+    const localeTag = resolveLocaleTag();
+    const dateKey = `${now.toDateString()}|${localeTag}`;
     if (dateKey !== lastDateKey) {
       lastDateKey = dateKey;
+      if (localeTag !== lastLocaleTag) {
+        lastLocaleTag = localeTag;
+        weekdayFormatter = new Intl.DateTimeFormat(localeTag, { weekday: 'long' });
+        dateFormatter = new Intl.DateTimeFormat(localeTag, {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
       weekday.textContent = capitalize(weekdayFormatter.format(now));
       dateLine.textContent = capitalize(dateFormatter.format(now));
     }

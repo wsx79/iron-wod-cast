@@ -1107,3 +1107,44 @@ html, body {
 .timer-screen.has-fortime .footer.fortime-footer {
   font-size: clamp(76px, 8.3vw, 156px) !important;
 }
+
+
+/* ================================================================
+   v29 — AMRAP: two-line "ROUND COMPLETATI"/"ROUNDS COMPLETED"/
+   "RONDAS COMPLETADAS" caption under the red count (already localized
+   by the app; led-display.js just splits it across two lines).
+   ================================================================ */
+.timer-screen.has-amrap .interval-badge {
+  flex-direction: column !important;
+  gap: 1vh !important;
+}
+
+.timer-screen.has-amrap .interval-total {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  color: var(--muted) !important;
+  font-family: "Courier New", monospace !important;
+  font-size: clamp(20px, 2.5vw, 46px) !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: .04em !important;
+}
+
+
+/* ================================================================
+   v30 — Structured Intervals: bottom "ROUND x/y · INTERVALLI N"
+   caption slightly bigger.
+   ================================================================ */
+.timer-screen.has-interval .footer.intervals-total-footer {
+  font-size: clamp(40px, 4.4vw, 84px) !important;
+}
+
+
+/* ================================================================
+   STANDBY v14 — fixed-width clock (no more shifting as digits change)
+   ================================================================ */
+.standby-clock {
+  width: 9ch;
+  text-align: center;
+}

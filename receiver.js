@@ -691,6 +691,13 @@
     const timerText = String(data.timerText || '');
     const footerText = String(data.footerText || '');
 
+    // Remembered so the standby screen (which has no active session of its
+    // own) can show the weekday/date in the app's configured language
+    // instead of whatever the TV/Chromecast device's system locale is.
+    try {
+      localStorage.setItem('ironWodLastVoiceLanguage', normalizeLanguage(data.voiceLanguage));
+    } catch (_) {}
+
     const previousStatusText = lastStatus;
 
     maybePlayCue(

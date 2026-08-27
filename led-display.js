@@ -201,9 +201,20 @@
   function parseAmrapRoundCount(rawFooter) {
     // TimerBoard sends localized values such as:
     // "ROUND COMPLETATI: 3", "ROUNDS COMPLETED: 3", "RONDAS COMPLETADAS: 3".
-    // Read the trailing number instead of depending on exact punctuation/language.
-    const match = String(rawFooter || '').trim().match(/(\d+)\s*$/);
-    return match ? match[1] : '0';
+    // Read the trailing number instead of depending on exact punctuation/language,
+    // and reuse the label itself (already correctly localized by the app) for the
+    // two-line caption under the badge instead of hardcoding it per language here.
+    const text = String(rawFooter || '').trim();
+    const match = text.match(/(\d+)\s*$/);
+    const count = match ? match[1] : '0';
+    const label = match
+      ? text.slice(0, match.index).replace(/\s*:\s*$/, '').trim()
+      : '';
+    const lastSpace = label.lastIndexOf(' ');
+    const labelLines = lastSpace > -1
+      ? [label.slice(0, lastSpace), label.slice(lastSpace + 1)]
+      : [label];
+    return { count, labelLines };
   }
 
   function parseEmomFooter(rawFooter) {
@@ -281,11 +292,18 @@
 
     // EMOM/Tabata/manual Intervals send their round footer from the very
     // start, including during the preparation countdown before round 1
-    // begins. Structured Intervals/AMRAP only expose round info once WORK
-    // is actually running, so gate these here to match that behavior: no
-    // left badge while still counting down to the first round.
+    // begins. For Time's "TIME CAP..." footer is likewise present from the
+    // very start. Structured Intervals only exposes its INTERVALLO status
+    // once WORK is actually running. Gate all of these on the same rule so
+    // the preparation countdown always renders as a plain centered/orange
+    // digit like every other mode, never the family's badge/right-aligned
+    // treatment. AMRAP is included too: after a first run, activeVisualMode
+    // stays 'AMRAP' from the previous session, so a second preparation
+    // countdown (re-Start) needs the same guard, not just the very first one.
     const emomActive = emom && state !== 'state-prep';
     const roundsActive = activeVisualMode === 'ROUNDS' && round && state !== 'state-prep';
+    const forTimeActive = activeVisualMode === 'FORTIME' && state !== 'state-prep';
+    const amrapActive = activeVisualMode === 'AMRAP' && state !== 'state-prep';
 
     // Structured Intervals new protocol:
     // status = WORK/REST · INTERVALLO n/N
@@ -355,15 +373,24 @@
       // Round info now lives in the left badge; the bottom footer is unused.
       footer.textContent = '';
       footer.className = 'footer hidden';
-    } else if (activeVisualMode === 'AMRAP') {
+    } else if (amrapActive) {
       screen.classList.add('has-amrap');
 
       // Big red completed-rounds count on the left, same language as
-      // Structured Intervals/EMOM. AMRAP has no fixed total, so no
-      // second smaller number underneath.
-      intervalNumber.textContent = parseAmrapRoundCount(rawFooter);
+      // Structured Intervals/EMOM. Underneath it, the app's own localized
+      // "ROUND COMPLETATI"/"ROUNDS COMPLETED"/"RONDAS COMPLETADAS" caption,
+      // split across two lines instead of a second number (AMRAP has no
+      // fixed total).
+      const amrapRound = parseAmrapRoundCount(rawFooter);
+      intervalNumber.textContent = amrapRound.count;
+      intervalTotal.textContent = '';
+      amrapRound.labelLines.forEach(line => {
+        const lineEl = document.createElement('div');
+        lineEl.textContent = line;
+        intervalTotal.appendChild(lineEl);
+      });
       intervalBadge.classList.remove('hidden');
-      intervalTotal.classList.add('hidden');
+      intervalTotal.classList.remove('hidden');
 
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
@@ -385,7 +412,7 @@
       footer.textContent = sourceFooterText;
       footer.className = 'footer';
       footer.classList.toggle('hidden', !sourceFooterText);
-    } else if (activeVisualMode === 'FORTIME') {
+    } else if (forTimeActive) {
       screen.classList.add('has-fortime');
 
       // No rounds at all: just the enlarged clock, full width, no left
