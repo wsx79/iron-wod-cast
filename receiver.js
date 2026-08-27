@@ -24,7 +24,7 @@
   let lastRoundAlertKey = '';
   let lastEmomRoundKey = '';
   let lastRestCueStatus = '';
-  const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
+  const AUDIO_ASSET_VERSION = '20260827-voice-refresh1';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
   function normalizeLanguage(language) {
