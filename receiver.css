@@ -1133,6 +1133,7 @@ html, body {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
+  margin-left: 1.2vw !important;
   color: var(--muted) !important;
   font-family: "Courier New", monospace !important;
   font-size: clamp(20px, 2.5vw, 46px) !important;
