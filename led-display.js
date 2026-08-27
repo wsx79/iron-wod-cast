@@ -235,9 +235,17 @@
       activeVisualMode = 'AMRAP';
     }
 
-    screen.className = `timer-screen ${visualState(rawStatus)}`;
+    const state = visualState(rawStatus);
+    screen.className = `timer-screen ${state}`;
     status.textContent = clean;
     renderDigits(timerText);
+
+    // EMOM's round footer ("EMOM · ROUND 1/10") is sent from the very start,
+    // including during the preparation countdown before round 1 begins.
+    // Structured Intervals/AMRAP only expose their round info once WORK is
+    // actually running, so only gate EMOM here to match that behavior:
+    // no left badge while still counting down to the first round.
+    const emomActive = emom && state !== 'state-prep';
 
     // Structured Intervals new protocol:
     // status = WORK/REST · INTERVALLO n/N
@@ -277,7 +285,7 @@
         footer.innerHTML =
           `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
       }
-    } else if (activeVisualMode === 'EMOM' && emom) {
+    } else if (activeVisualMode === 'EMOM' && emomActive) {
       screen.classList.add('has-emom');
 
       // Big red current ROUND number on the left, smaller total rounds below it.
