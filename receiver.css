@@ -943,3 +943,109 @@ html, body {
   gap: min(.12vw, 2px) !important;
   color: var(--white) !important;
 }
+
+
+/* ================================================================
+   v27 — Countdown/Count Up: clock right-aligned (no badge, but still
+   flush right like the rest of the family) and the running-state
+   "COUNTDOWN"/"COUNT UP" label hidden entirely (every other status —
+   GET READY, PAUSED, SET UP TIMER, DONE/FINISHED — stays visible).
+   For Time adopts the same enlarged/right-aligned family baseline as
+   Countdown/Count Up, plus its own status relabel/footer treatment.
+   ================================================================ */
+
+.timer-screen.has-plain .timer {
+  justify-content: flex-end !important;
+}
+
+.timer-screen.has-plain.state-idle .status {
+  visibility: hidden !important;
+}
+
+.timer-screen.has-fortime .top-counter {
+  display: none !important;
+}
+
+.timer-screen.has-fortime .status {
+  top: 1.2vh !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  text-align: center !important;
+  transform: none !important;
+  font-size: clamp(66px, 9vw, 174px) !important;
+  line-height: .95 !important;
+}
+
+/* Running "IN TIME" (relabeled from "FOR TIME" by led-display.js): green,
+   like every other "on pace" running state in the family. */
+.timer-screen.has-fortime.state-idle .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.has-fortime.state-paused .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-fortime.state-paused .timer {
+  color: var(--white) !important;
+}
+
+.timer-screen.has-fortime.state-prep .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-fortime.state-config .status {
+  top: 2vh !important;
+  font-size: clamp(28px, 3.8vw, 70px) !important;
+  line-height: 1 !important;
+  color: var(--orange) !important;
+}
+
+/* OTC (over time cap, still running) and finished labels can be long
+   ("COMPLETATO OTC"/"COMPLETED OTC"/"COMPLETADO OTC") so they stay
+   compact; state-otc already inherits its red color from the base rules. */
+.timer-screen.has-fortime.state-otc .status,
+.timer-screen.has-fortime.state-finished .status {
+  font-size: clamp(34px, 4.8vw, 88px) !important;
+}
+
+.timer-screen.has-fortime.state-finished .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.has-fortime .timer {
+  left: 1vw !important;
+  right: 1vw !important;
+  top: 50% !important;
+  height: min(40vw, 56vh) !important;
+  gap: min(.12vw, 2px) !important;
+  color: var(--white) !important;
+  justify-content: flex-end !important;
+}
+
+.timer-screen.has-fortime .led-char {
+  width: min(21vw, 35vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+.timer-screen.has-fortime .led-colon {
+  width: min(3.25vw, 5.1vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+/* Time cap footer ("TIME CAP mm:ss" / "NO TIME CAP"), bigger than the
+   generic footer used by untouched screens. */
+.timer-screen.has-fortime .footer.fortime-footer {
+  left: 1vw !important;
+  right: 1vw !important;
+  bottom: .8vh !important;
+  width: auto !important;
+  text-align: center !important;
+  color: var(--muted) !important;
+  font-size: clamp(38px, 4.15vw, 78px) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: .025em !important;
+  white-space: nowrap !important;
+}

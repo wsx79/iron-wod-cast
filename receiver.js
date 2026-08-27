@@ -587,6 +587,11 @@
     if (normalized.startsWith('COMPLETADO DENTRO DEL TIME CAP')) return 'COMPLETADO';
     if (normalized.startsWith('COMPLETADO DENTRO DEL TIEMPO')) return 'COMPLETADO';
 
+    // For Time finishing over its (soft) time cap: keep it short on the TV too.
+    if (normalized.startsWith('COMPLETATO OLTRE TIME CAP')) return 'COMPLETATO OTC';
+    if (normalized.startsWith('COMPLETED OVER TIME CAP')) return 'COMPLETED OTC';
+    if (normalized.startsWith('COMPLETADO FUERA DEL TIME CAP')) return 'COMPLETADO OTC';
+
     return raw;
   }
 

@@ -155,7 +155,12 @@
     if (value.includes('PREPAR') || value.includes('GET READY')) {
       return 'state-prep';
     }
-    if (value === 'OTC' || value.includes('OVER TIME CAP') || value.includes('OLTRE TIME CAP')) {
+    if (
+      value === 'OTC' ||
+      value.includes('OVER TIME CAP') ||
+      value.includes('OLTRE TIME CAP') ||
+      value.includes('FUERA DEL TIME CAP')
+    ) {
       return 'state-otc';
     }
     if (
@@ -219,6 +224,21 @@
     return value === 'COUNTDOWN' || value === 'COUNT UP';
   }
 
+  // For Time: no rounds, elapsed clock with an optional soft time cap. It
+  // never has an "INTERVALLO"/"EMOM ·"/"ROUND x/y" footer, but its footer is
+  // always either "TIME CAP mm:ss" or the localized "NO TIME CAP" label.
+  function isForTimeFooter(rawFooter) {
+    return normalize(rawFooter).includes('TIME CAP');
+  }
+
+  // Visual-only relabel of the running "FOR TIME" status to "IN TIME"
+  // (green instead of orange). Every other For Time status (GET READY,
+  // OLTRE TIME CAP/OVER TIME CAP/FUERA DEL TIME CAP, COMPLETATO..., PAUSED,
+  // SET UP TIMER) is left exactly as sent.
+  function relabelForTimeStatus(cleanedStatus) {
+    return normalize(cleanedStatus) === 'FOR TIME' ? 'IN TIME' : cleanedStatus;
+  }
+
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
     const rawFooter = sourceFooter.textContent || '';
@@ -235,6 +255,8 @@
     // footer, no INTERVALLO suffix (Structured Intervals) and no "EMOM ·"
     // prefix. Both screens send the identical shape, so they share one mode.
     const roundsMode = !interval && !emom && round;
+    // For Time: no rounds, footer is always "TIME CAP mm:ss" or "NO TIME CAP".
+    const forTimeMode = !interval && !emom && !round && isForTimeFooter(rawFooter);
 
     if (isIdleSource(rawStatus, timerText, rawFooter)) {
       activeVisualMode = '';
@@ -248,11 +270,13 @@
       activeVisualMode = 'AMRAP';
     } else if (isPlainTimerStatus(rawStatus)) {
       activeVisualMode = 'PLAIN';
+    } else if (forTimeMode) {
+      activeVisualMode = 'FORTIME';
     }
 
     const state = visualState(rawStatus);
     screen.className = `timer-screen ${state}`;
-    status.textContent = clean;
+    status.textContent = activeVisualMode === 'FORTIME' ? relabelForTimeStatus(clean) : clean;
     renderDigits(timerText);
 
     // EMOM/Tabata/manual Intervals send their round footer from the very
@@ -360,6 +384,21 @@
       const sourceFooterText = String(rawFooter).trim();
       footer.textContent = sourceFooterText;
       footer.className = 'footer';
+      footer.classList.toggle('hidden', !sourceFooterText);
+    } else if (activeVisualMode === 'FORTIME') {
+      screen.classList.add('has-fortime');
+
+      // No rounds at all: just the enlarged clock, full width, no left
+      // badge. The time cap footer ("TIME CAP mm:ss" / "NO TIME CAP") is
+      // shown bigger than the generic footer used by other screens.
+      intervalBadge.classList.add('hidden');
+      intervalTotal.classList.add('hidden');
+      topCounter.textContent = '';
+      topCounter.classList.add('hidden');
+
+      const sourceFooterText = String(rawFooter).trim();
+      footer.textContent = sourceFooterText;
+      footer.className = 'footer fortime-footer';
       footer.classList.toggle('hidden', !sourceFooterText);
     } else {
       intervalBadge.classList.add('hidden');
