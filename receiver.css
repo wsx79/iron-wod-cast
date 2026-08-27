@@ -1218,3 +1218,20 @@ html, body {
 .timer-screen.has-interval .interval-number {
   font-size: clamp(90px, 10.5vw, 200px) !important;
 }
+
+
+/* ================================================================
+   v35 — Finished label overflowing off-screen. EMOM/ROUNDS/PLAIN/For
+   Time already shrink the status font for the long "WORKOUT
+   COMPLETE"/"COMPLETATO"-style finish message, but Structured
+   Intervals and AMRAP didn't have an equivalent override and kept
+   their much bigger running-status size, wide enough to run off both
+   edges of the screen even though the text itself is centered. Added
+   as one unscoped rule instead of repeating it per mode, so it also
+   covers any future/unclassified mode that reaches state-finished
+   without its own override — a mode-specific rule (higher selector
+   specificity) still wins wherever one already exists.
+   ================================================================ */
+.timer-screen.state-finished .status {
+  font-size: clamp(34px, 4.8vw, 88px) !important;
+}
