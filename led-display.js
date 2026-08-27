@@ -376,13 +376,14 @@
       // ROUND mode -> ROUND x/y · INTERVALLI N
       // TIME mode  -> TEMPO TOTALE mm:ss · INTERVALLI N
       const intervalsCountHtml =
-        `<span class="intervals-count">INTERVALLI ` +
-        `<span class="intervals-count-number">${interval.total}</span></span>`;
+        `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
       if (round) {
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
         footer.innerHTML =
-          `<span class="intervals-primary">ROUND ${round.current}/${round.total}</span>` +
+          `<span class="intervals-primary">ROUND ` +
+          `<span class="intervals-round-number">${round.current}</span>/` +
+          `<span class="intervals-round-number">${round.total}</span></span>` +
           `<span class="intervals-separator"> · </span>` +
           intervalsCountHtml;
       } else if (totalTime) {
