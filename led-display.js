@@ -263,6 +263,19 @@
       .join('  •  ');
   }
 
+  // True only when the footer contains one of the round-less block-type
+  // words as its own "  •  "-joined segment. This is the ONLY reliable
+  // signal that we're looking at a structured/library WOD's round-less
+  // sub-block (Countdown/Count Up/For Time chained inside a multi-block
+  // WOD) rather than any other screen's prep/rest/paused status — those
+  // never put a bare block-type word in their footer, so this never
+  // fires for them.
+  function hasPlainBlockFooter(rawFooter) {
+    return String(rawFooter || '')
+      .split(/\s*•\s*/)
+      .some(segment => PLAIN_BLOCK_LABELS.test(normalize(segment.trim())));
+  }
+
   // Visual-only relabel of the running "FOR TIME" status to "IN TIME"
   // (green instead of orange). Every other For Time status (GET READY,
   // OLTRE TIME CAP/OVER TIME CAP/FUERA DEL TIME CAP, COMPLETATO..., PAUSED,
@@ -304,23 +317,15 @@
       activeVisualMode = 'PLAIN';
     } else if (forTimeMode) {
       activeVisualMode = 'FORTIME';
-    } else if (clean !== '') {
-      // Unrecognized shape with real content (a round-less sub-block chained
-      // inside a structured/library WOD): same enlarged plain-clock family
-      // treatment as the standalone Countdown/Count Up screens, instead of
-      // silently keeping whatever mode the previous block left behind.
+    } else if (hasPlainBlockFooter(rawFooter)) {
+      // A round-less sub-block chained inside a structured/library WOD
+      // (Countdown/Count Up): same enlarged plain-clock family treatment as
+      // the standalone Countdown/Count Up screens. Gated specifically on the
+      // footer carrying one of those block-type words, NOT on "any non-idle
+      // status" — every other screen's prep/rest/paused status must keep
+      // falling through untouched below, exactly as before.
       activeVisualMode = 'PLAIN';
     }
-
-    // Each mode branch below only ADDS its own "has-*" class. A structured/
-    // library WOD chains several different block types (and therefore modes)
-    // within a single Cast session, unlike every standalone timer screen
-    // which only ever shows one mode for its whole session — so classes from
-    // an earlier block must be cleared every tick or they keep stacking and
-    // fighting each other's CSS.
-    screen.classList.remove(
-      'has-interval', 'has-emom', 'has-rounds', 'has-amrap', 'has-plain', 'has-fortime'
-    );
 
     const state = visualState(rawStatus);
     screen.className = `timer-screen ${state}`;
@@ -360,25 +365,27 @@
       // Bottom information:
       // ROUND mode -> ROUND x/y · INTERVALLI N
       // TIME mode  -> TEMPO TOTALE mm:ss · INTERVALLI N
+      const intervalsCountHtml =
+        `<span class="intervals-count">INTERVALLI ` +
+        `<span class="intervals-count-number">${interval.total}</span></span>`;
       if (round) {
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
         footer.innerHTML =
           `<span class="intervals-primary">ROUND ${round.current}/${round.total}</span>` +
           `<span class="intervals-separator"> · </span>` +
-          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
+          intervalsCountHtml;
       } else if (totalTime) {
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
         footer.innerHTML =
           `<span class="intervals-primary">TEMPO TOTALE ${totalTime}</span>` +
           `<span class="intervals-separator"> · </span>` +
-          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
+          intervalsCountHtml;
       } else {
         footer.className = 'footer intervals-total-footer';
         footer.classList.remove('hidden');
-        footer.innerHTML =
-          `<span class="intervals-count">INTERVALLI ${interval.total}</span>`;
+        footer.innerHTML = intervalsCountHtml;
       }
     } else if (activeVisualMode === 'EMOM' && emomActive) {
       screen.classList.add('has-emom');

@@ -898,6 +898,16 @@ html, body {
   color: #4da3ff !important;
 }
 
+/* PLAIN's clock is forced white unconditionally (see below), which was
+   silently beating the base ".state-rest .timer{color:blue}" rule via
+   !important specificity whenever a structured/library WOD's round-less
+   sub-block (Countdown/Count Up) sits in REST/BETWEEN_BLOCKS. Restore
+   blue explicitly for both the status word and the clock digits. */
+.timer-screen.has-plain.state-rest .status,
+.timer-screen.has-plain.state-rest .timer {
+  color: #4da3ff !important;
+}
+
 .timer-screen.has-rounds.state-paused .status,
 .timer-screen.has-plain.state-paused .status {
   color: var(--orange) !important;
@@ -1138,6 +1148,16 @@ html, body {
    ================================================================ */
 .timer-screen.has-interval .footer.intervals-total-footer {
   font-size: clamp(40px, 4.4vw, 84px) !important;
+}
+
+
+/* ================================================================
+   v32 — Structured Intervals: "INTERVALLI" label back to its normal
+   weight, but the trailing count after it doubled in size instead.
+   ================================================================ */
+.timer-screen.has-interval .intervals-count-number {
+  font-size: 2em !important;
+  font-weight: 800 !important;
 }
 
 
