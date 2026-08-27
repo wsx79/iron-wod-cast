@@ -811,3 +811,135 @@ html, body {
 .timer-screen.has-emom .interval-total {
   font-size: clamp(39px, 4.8vw, 90px) !important;
 }
+
+
+/* ================================================================
+   v26 — Tabata / manual Intervals (shared "ROUNDS" mode) and
+   Countdown / Count Up (shared "PLAIN" mode, no rounds at all) adopt
+   the same family baseline as Intervals/EMOM/AMRAP. First pass: same
+   proportions as EMOM for ROUNDS, same as AMRAP-without-badge for
+   PLAIN. To be refined by hand per timer afterwards.
+   ================================================================ */
+
+.timer-screen.has-rounds .top-counter,
+.timer-screen.has-plain .top-counter {
+  display: none !important;
+}
+
+.timer-screen.has-rounds .status,
+.timer-screen.has-plain .status {
+  top: 1.2vh !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  text-align: center !important;
+  transform: none !important;
+  font-size: clamp(66px, 9vw, 174px) !important;
+  line-height: .95 !important;
+}
+
+.timer-screen.has-rounds.state-work .status,
+.timer-screen.has-plain.state-work .status,
+.timer-screen.has-plain.state-idle .status {
+  color: var(--green) !important;
+}
+
+.timer-screen.has-rounds.state-rest .status {
+  color: #4da3ff !important;
+}
+
+.timer-screen.has-rounds.state-paused .status,
+.timer-screen.has-plain.state-paused .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-rounds.state-prep .status,
+.timer-screen.has-plain.state-prep .status {
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-plain.state-paused .timer {
+  color: var(--white) !important;
+}
+
+.timer-screen.has-rounds.state-config .status,
+.timer-screen.has-plain.state-config .status {
+  top: 2vh !important;
+  font-size: clamp(28px, 3.8vw, 70px) !important;
+  line-height: 1 !important;
+  color: var(--orange) !important;
+}
+
+.timer-screen.has-rounds.state-finished .status,
+.timer-screen.has-plain.state-finished .status {
+  font-size: clamp(34px, 4.8vw, 88px) !important;
+  color: var(--green) !important;
+}
+
+/* Shared LED clock proportions. */
+.timer-screen.has-rounds .led-char,
+.timer-screen.has-plain .led-char {
+  width: min(21vw, 35vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+.timer-screen.has-rounds .led-colon,
+.timer-screen.has-plain .led-colon {
+  width: min(3.25vw, 5.1vh) !important;
+  height: min(39vw, 55vh) !important;
+}
+
+/* ROUNDS: red current round + smaller total on the left, clock right-aligned
+   (same language as EMOM). */
+.timer-screen.has-rounds .interval-badge {
+  display: flex !important;
+  flex-direction: column !important;
+  position: absolute !important;
+  left: .5vw !important;
+  top: 50% !important;
+  width: 16vw !important;
+  height: 45vh !important;
+  transform: translateY(-50%) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1.4vh !important;
+}
+
+.timer-screen.has-rounds .interval-number {
+  color: var(--red) !important;
+  font-family: "Courier New", monospace !important;
+  font-size: clamp(140px, 17.7vw, 330px) !important;
+  line-height: .84 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.04em !important;
+  text-shadow: 0 0 5px currentColor, 0 0 16px currentColor !important;
+}
+
+.timer-screen.has-rounds .interval-total {
+  color: var(--muted) !important;
+  font-family: "Courier New", monospace !important;
+  font-size: clamp(39px, 4.8vw, 90px) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: -.02em !important;
+}
+
+.timer-screen.has-rounds .timer {
+  left: 16.5vw !important;
+  right: .5vw !important;
+  top: 50% !important;
+  height: min(40vw, 56vh) !important;
+  gap: min(.12vw, 2px) !important;
+  color: var(--white) !important;
+  justify-content: flex-end !important;
+}
+
+/* PLAIN: no badge, clock spans the full width like the pre-round AMRAP. */
+.timer-screen.has-plain .timer {
+  left: 1vw !important;
+  right: 1vw !important;
+  top: 50% !important;
+  height: min(40vw, 56vh) !important;
+  gap: min(.12vw, 2px) !important;
+  color: var(--white) !important;
+}

@@ -23,6 +23,7 @@
   let lastVoiceLanguage = '';
   let lastRoundAlertKey = '';
   let lastEmomRoundKey = '';
+  let lastRestCueStatus = '';
   const AUDIO_ASSET_VERSION = '20260821-stable-audio3';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
@@ -468,12 +469,6 @@
         } else {
           finishCue();
         }
-      } else if (restStatus) {
-        if (mode === 'VOICE') {
-          if (!playVoiceAsset('rest', voiceLanguage)) restCue();
-        } else {
-          restCue();
-        }
       } else if (
         activeWork &&
         (previousPreparing || isRestStatus(prev))
@@ -484,6 +479,25 @@
         } else {
           workCue();
         }
+      }
+    }
+
+    // REST cue: tracked with its own dedicated key instead of the shared
+    // status !== prev gate above, so it cannot be silently skipped by
+    // anything else in this function that resets lastStatus for an
+    // unrelated reason (mode/language switch, early-return branches, etc).
+    if (mode !== 'SILENT') {
+      if (restStatus) {
+        if (status !== lastRestCueStatus) {
+          lastRestCueStatus = status;
+          if (mode === 'VOICE') {
+            if (!playVoiceAsset('rest', voiceLanguage)) restCue();
+          } else {
+            restCue();
+          }
+        }
+      } else {
+        lastRestCueStatus = '';
       }
     }
 
@@ -727,6 +741,7 @@
     lastVoiceLanguage = '';
     lastRoundAlertKey = '';
     lastEmomRoundKey = '';
+    lastRestCueStatus = '';
   }
 
 

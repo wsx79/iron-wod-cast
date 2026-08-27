@@ -213,6 +213,12 @@
     };
   }
 
+  // Countdown / Count Up: no rounds at all, just WORK-style running status.
+  function isPlainTimerStatus(rawStatus) {
+    const value = normalize(cleanStatus(rawStatus));
+    return value === 'COUNTDOWN' || value === 'COUNT UP';
+  }
+
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
     const rawFooter = sourceFooter.textContent || '';
@@ -225,14 +231,23 @@
     const emom = parseEmomFooter(rawFooter);
     const clean = cleanStatus(rawStatus);
 
+    // Tabata / manual Intervals: bare WORK/REST status + plain "ROUND x / y"
+    // footer, no INTERVALLO suffix (Structured Intervals) and no "EMOM ·"
+    // prefix. Both screens send the identical shape, so they share one mode.
+    const roundsMode = !interval && !emom && round;
+
     if (isIdleSource(rawStatus, timerText, rawFooter)) {
       activeVisualMode = '';
     } else if (interval) {
       activeVisualMode = 'INTERVALS';
     } else if (emom) {
       activeVisualMode = 'EMOM';
+    } else if (roundsMode) {
+      activeVisualMode = 'ROUNDS';
     } else if (isAmrapStatus(rawStatus)) {
       activeVisualMode = 'AMRAP';
+    } else if (isPlainTimerStatus(rawStatus)) {
+      activeVisualMode = 'PLAIN';
     }
 
     const state = visualState(rawStatus);
@@ -240,12 +255,13 @@
     status.textContent = clean;
     renderDigits(timerText);
 
-    // EMOM's round footer ("EMOM · ROUND 1/10") is sent from the very start,
-    // including during the preparation countdown before round 1 begins.
-    // Structured Intervals/AMRAP only expose their round info once WORK is
-    // actually running, so only gate EMOM here to match that behavior:
-    // no left badge while still counting down to the first round.
+    // EMOM/Tabata/manual Intervals send their round footer from the very
+    // start, including during the preparation countdown before round 1
+    // begins. Structured Intervals/AMRAP only expose round info once WORK
+    // is actually running, so gate these here to match that behavior: no
+    // left badge while still counting down to the first round.
     const emomActive = emom && state !== 'state-prep';
+    const roundsActive = activeVisualMode === 'ROUNDS' && round && state !== 'state-prep';
 
     // Structured Intervals new protocol:
     // status = WORK/REST · INTERVALLO n/N
@@ -300,6 +316,21 @@
       // Round info now lives in the left badge; the bottom footer is unused.
       footer.textContent = '';
       footer.className = 'footer hidden';
+    } else if (activeVisualMode === 'ROUNDS' && roundsActive) {
+      screen.classList.add('has-rounds');
+
+      // Tabata / manual Intervals: same left-badge language as EMOM.
+      intervalNumber.textContent = String(round.current);
+      intervalTotal.textContent = String(round.total);
+      intervalBadge.classList.remove('hidden');
+      intervalTotal.classList.remove('hidden');
+
+      topCounter.textContent = '';
+      topCounter.classList.add('hidden');
+
+      // Round info now lives in the left badge; the bottom footer is unused.
+      footer.textContent = '';
+      footer.className = 'footer hidden';
     } else if (activeVisualMode === 'AMRAP') {
       screen.classList.add('has-amrap');
 
@@ -316,6 +347,20 @@
       // Round count now lives in the left badge; the bottom footer is unused.
       footer.textContent = '';
       footer.className = 'footer hidden';
+    } else if (activeVisualMode === 'PLAIN') {
+      screen.classList.add('has-plain');
+
+      // No rounds at all (Countdown/Count Up): just the enlarged clock,
+      // full width, no left badge.
+      intervalBadge.classList.add('hidden');
+      intervalTotal.classList.add('hidden');
+      topCounter.textContent = '';
+      topCounter.classList.add('hidden');
+
+      const sourceFooterText = String(rawFooter).trim();
+      footer.textContent = sourceFooterText;
+      footer.className = 'footer';
+      footer.classList.toggle('hidden', !sourceFooterText);
     } else {
       intervalBadge.classList.add('hidden');
       intervalTotal.classList.add('hidden');
