@@ -485,6 +485,56 @@ html, body {
 
 
 /* ================================================================
+   STANDBY v13 — bigger clock in a nicer face, weekday + date lines.
+   Gap is now split: a moderate logo/clock/date-group rhythm at the
+   container level, with a tight gap inside the date group itself, so
+   adding two more lines doesn't just stretch everything apart evenly.
+   ================================================================ */
+.standby-screen {
+  gap: 4vh;
+}
+
+.standby-logo {
+  margin-top: -2vh;
+}
+
+.standby-clock {
+  font-family: "Orbitron", "Courier New", monospace;
+  font-size: clamp(140px, 20vw, 400px);
+  font-weight: 800;
+  letter-spacing: 0;
+  max-width: 96vw;
+}
+
+.standby-date-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .8vh;
+}
+
+.standby-weekday {
+  color: var(--orange);
+  font-family: "Rajdhani", "Courier New", monospace;
+  font-size: clamp(38px, 4.6vw, 88px);
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.standby-date {
+  color: #bdbdbd;
+  font-family: "Rajdhani", "Courier New", monospace;
+  font-size: clamp(30px, 3.4vw, 64px);
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+
+/* ================================================================
    LED v19 — AMRAP adopts the frozen Structured Intervals visual base
    Visual-only. No receiver/audio/transport changes.
    ================================================================ */
