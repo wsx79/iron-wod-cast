@@ -760,3 +760,54 @@ html, body {
   right: .5vw !important;
   justify-content: flex-end !important;
 }
+
+
+/* ================================================================
+   v25 — AMRAP adopts the same left-badge + right-clock language as
+   Structured Intervals/EMOM (completed rounds count, no total since
+   AMRAP has no fixed number of rounds). Also: Intervals' red number
+   slightly smaller, EMOM's red number and total slightly bigger.
+   ================================================================ */
+
+.timer-screen.has-amrap .interval-badge {
+  display: flex !important;
+  position: absolute !important;
+  left: .5vw !important;
+  top: 50% !important;
+  width: 16vw !important;
+  height: 45vh !important;
+  transform: translateY(-50%) !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.timer-screen.has-amrap .interval-number {
+  color: var(--red) !important;
+  font-family: "Courier New", monospace !important;
+  font-size: clamp(112px, 14.2vw, 266px) !important;
+  line-height: .84 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.04em !important;
+  text-shadow: 0 0 5px currentColor, 0 0 16px currentColor !important;
+}
+
+/* Clock hugs the right edge instead of sitting centered on the screen. */
+.timer-screen.has-amrap .timer {
+  left: 16.5vw !important;
+  right: .5vw !important;
+  justify-content: flex-end !important;
+}
+
+/* Structured Intervals: slightly smaller red current-interval number. */
+.timer-screen.has-interval .interval-number {
+  font-size: clamp(112px, 14.2vw, 266px) !important;
+}
+
+/* EMOM: slightly bigger red current round and total-rounds numbers. */
+.timer-screen.has-emom .interval-number {
+  font-size: clamp(140px, 17.7vw, 330px) !important;
+}
+
+.timer-screen.has-emom .interval-total {
+  font-size: clamp(39px, 4.8vw, 90px) !important;
+}

@@ -193,37 +193,12 @@
       normalize(rawFooter) === 'TIMER';
   }
 
-  function renderAmrapFooter(rawFooter) {
-    const text = String(rawFooter || '').trim();
-
-    footer.className = 'footer amrap-footer';
-    footer.classList.toggle('hidden', !text);
-
-    if (!text) {
-      footer.textContent = '';
-      return;
-    }
-
+  function parseAmrapRoundCount(rawFooter) {
     // TimerBoard sends localized values such as:
     // "ROUND COMPLETATI: 3", "ROUNDS COMPLETED: 3", "RONDAS COMPLETADAS: 3".
-    // Split the trailing number instead of depending on exact punctuation/language.
-    const numberMatch = text.match(/(\d+)\s*$/);
-    if (numberMatch) {
-      const number = numberMatch[1];
-      const label = text
-        .slice(0, numberMatch.index)
-        .replace(/\s*:\s*$/, '')
-        .trim();
-
-      if (label) {
-        footer.innerHTML =
-          `<span class="amrap-primary">${label}</span>` +
-          `<span class="amrap-count">${number}</span>`;
-        return;
-      }
-    }
-
-    footer.textContent = text;
+    // Read the trailing number instead of depending on exact punctuation/language.
+    const match = String(rawFooter || '').trim().match(/(\d+)\s*$/);
+    return match ? match[1] : '0';
   }
 
   function parseEmomFooter(rawFooter) {
@@ -320,12 +295,19 @@
     } else if (activeVisualMode === 'AMRAP') {
       screen.classList.add('has-amrap');
 
-      intervalBadge.classList.add('hidden');
+      // Big red completed-rounds count on the left, same language as
+      // Structured Intervals/EMOM. AMRAP has no fixed total, so no
+      // second smaller number underneath.
+      intervalNumber.textContent = parseAmrapRoundCount(rawFooter);
+      intervalBadge.classList.remove('hidden');
       intervalTotal.classList.add('hidden');
+
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
-      renderAmrapFooter(rawFooter);
+      // Round count now lives in the left badge; the bottom footer is unused.
+      footer.textContent = '';
+      footer.className = 'footer hidden';
     } else {
       intervalBadge.classList.add('hidden');
       intervalTotal.classList.add('hidden');
