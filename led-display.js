@@ -62,6 +62,24 @@
       .replace(/[\u0300-\u036f]/g, '');
   }
 
+  // Shrinks an element's font-size (inline, on top of whatever the CSS
+  // clamp() set it to) just enough that its actual rendered width fits
+  // within maxWidth, instead of guessing one fixed font-size that
+  // assumes a specific font's character metrics. Different devices can
+  // fall back to different fonts for the same font-family list, so a
+  // static guess that happens to fit on one can still clip on another.
+  // Resets to the CSS size first so it grows back once there's room
+  // again (e.g. a narrower digit combination on the next tick).
+  function fitTextToWidth(el, maxWidth) {
+    el.style.fontSize = '';
+    if (!maxWidth || maxWidth <= 0) return;
+    const width = el.getBoundingClientRect().width;
+    if (width <= maxWidth || width <= 0) return;
+    const currentSize = parseFloat(getComputedStyle(el).fontSize);
+    if (!currentSize) return;
+    el.style.fontSize = (currentSize * (maxWidth / width)) + 'px';
+  }
+
   function renderDigits(value) {
     const raw = String(value || '').trim();
     timer.textContent = '';
@@ -363,10 +381,17 @@
     if (interval) {
       screen.classList.add('has-interval');
 
-      // Big red current INTERVAL number on the left.
+      // Big red current INTERVAL number on the left. Its font-size is
+      // tuned for a specific font's per-digit width; if the device
+      // falls back to a wider font, two digits can end up rendering
+      // wider than the badge box and clip against the screen edge no
+      // matter how carefully the CSS size was picked. Measure the
+      // actual rendered width and shrink it in JS if it doesn't fit,
+      // instead of guessing.
       intervalNumber.textContent = String(interval.current).padStart(2, '0');
       intervalBadge.classList.remove('hidden');
       intervalTotal.classList.add('hidden');
+      fitTextToWidth(intervalNumber, intervalBadge.getBoundingClientRect().width * 0.9);
 
       // No extra blue counter at the top.
       topCounter.textContent = '';
