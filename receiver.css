@@ -1049,3 +1049,11 @@ html, body {
   letter-spacing: .025em !important;
   white-space: nowrap !important;
 }
+
+
+/* ================================================================
+   v28 — For Time: time cap footer doubled in size.
+   ================================================================ */
+.timer-screen.has-fortime .footer.fortime-footer {
+  font-size: clamp(76px, 8.3vw, 156px) !important;
+}

@@ -802,4 +802,25 @@
   );
 
   context.start({ disableIdleTimeout: true });
+
+  // disableIdleTimeout only stops the CAF splash/backdrop from taking over;
+  // it does nothing about the TV hardware itself deciding the input is idle
+  // and going to standby. The Screen Wake Lock API keeps the display awake
+  // for as long as this page is visible, which is exactly the same
+  // mechanism kiosk/presentation web apps use for this. Wake locks can be
+  // silently released by the platform (e.g. on visibility changes), so
+  // re-request whenever the page becomes visible again.
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      await navigator.wakeLock.request('screen');
+    } catch (error) {
+      console.warn('[IRON WOD] screen wake lock request failed:', error);
+    }
+  }
+
+  requestWakeLock();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') requestWakeLock();
+  });
 })();
