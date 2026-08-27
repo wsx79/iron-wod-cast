@@ -410,6 +410,14 @@
     const activeWork = isActiveWorkStatus(status);
     const restStatus = isRestStatus(status);
 
+    // Entering a fresh preparation phase (e.g. running the same AMRAP/EMOM
+    // again right after it finished) must not inherit a leftover lastTimer
+    // value from the previous run, or the first countdown tick that happens
+    // to match it (commonly "3") would be silently skipped.
+    if (preparing && !previousPreparing) {
+      lastTimer = '';
+    }
+
     const configuringOrReady =
       status.includes('CONFIGURA') ||
       status.includes('SET UP') ||

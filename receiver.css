@@ -713,3 +713,50 @@ html, body {
   bottom: 1.2vh !important;
   line-height: .9 !important;
 }
+
+
+/* ================================================================
+   v24 — EMOM: red current round + smaller total rounds on the left,
+   white clock right-aligned. Structured Intervals/AMRAP untouched.
+   Bottom footer is no longer used for EMOM (superseded by v23 above).
+   ================================================================ */
+
+.timer-screen.has-emom .interval-badge {
+  display: flex !important;
+  flex-direction: column !important;
+  position: absolute !important;
+  left: .5vw !important;
+  top: 50% !important;
+  width: 16vw !important;
+  height: 45vh !important;
+  transform: translateY(-50%) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1.4vh !important;
+}
+
+.timer-screen.has-emom .interval-number {
+  color: var(--red) !important;
+  font-family: "Courier New", monospace !important;
+  font-size: clamp(125px, 15.8vw, 295px) !important;
+  line-height: .84 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.04em !important;
+  text-shadow: 0 0 5px currentColor, 0 0 16px currentColor !important;
+}
+
+.timer-screen.has-emom .interval-total {
+  color: var(--muted) !important;
+  font-family: "Courier New", monospace !important;
+  font-size: clamp(34px, 4.2vw, 78px) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: -.02em !important;
+}
+
+/* Clock hugs the right edge instead of sitting centered on the screen. */
+.timer-screen.has-emom .timer {
+  left: 16.5vw !important;
+  right: .5vw !important;
+  justify-content: flex-end !important;
+}

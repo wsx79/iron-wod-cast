@@ -15,6 +15,7 @@
 
   let intervalBadge = document.getElementById('ledIntervalBadge');
   let intervalNumber = document.getElementById('ledIntervalNumber');
+  let intervalTotal = document.getElementById('ledIntervalTotal');
 
   // Visual mode memory only. This never touches Cast transport/audio.
   let activeVisualMode = '';
@@ -29,6 +30,13 @@
     intervalNumber.id = 'ledIntervalNumber';
     intervalNumber.className = 'interval-number';
     intervalBadge.appendChild(intervalNumber);
+
+    // EMOM-only: smaller total-rounds number under the current round.
+    // Hidden for Structured Intervals, which keeps its own frozen footer.
+    intervalTotal = document.createElement('div');
+    intervalTotal.id = 'ledIntervalTotal';
+    intervalTotal.className = 'interval-total hidden';
+    intervalBadge.appendChild(intervalTotal);
 
     screen.appendChild(intervalBadge);
   }
@@ -230,14 +238,6 @@
     };
   }
 
-  function renderEmomFooter(emom) {
-    footer.className = 'footer emom-footer';
-    footer.classList.remove('hidden');
-    footer.innerHTML =
-      `<span class="emom-primary">ROUND</span>` +
-      `<span class="emom-count">${emom.current}/${emom.total}</span>`;
-  }
-
   function sync() {
     const rawStatus = sourceStatus.textContent || '';
     const rawFooter = sourceFooter.textContent || '';
@@ -273,6 +273,7 @@
       // Big red current INTERVAL number on the left.
       intervalNumber.textContent = String(interval.current).padStart(2, '0');
       intervalBadge.classList.remove('hidden');
+      intervalTotal.classList.add('hidden');
 
       // No extra blue counter at the top.
       topCounter.textContent = '';
@@ -304,21 +305,30 @@
     } else if (activeVisualMode === 'EMOM' && emom) {
       screen.classList.add('has-emom');
 
-      intervalBadge.classList.add('hidden');
+      // Big red current ROUND number on the left, smaller total rounds below it.
+      intervalNumber.textContent = String(emom.current);
+      intervalTotal.textContent = String(emom.total);
+      intervalBadge.classList.remove('hidden');
+      intervalTotal.classList.remove('hidden');
+
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
-      renderEmomFooter(emom);
+      // Round info now lives in the left badge; the bottom footer is unused.
+      footer.textContent = '';
+      footer.className = 'footer hidden';
     } else if (activeVisualMode === 'AMRAP') {
       screen.classList.add('has-amrap');
 
       intervalBadge.classList.add('hidden');
+      intervalTotal.classList.add('hidden');
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
       renderAmrapFooter(rawFooter);
     } else {
       intervalBadge.classList.add('hidden');
+      intervalTotal.classList.add('hidden');
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
