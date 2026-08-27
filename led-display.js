@@ -242,6 +242,27 @@
     return normalize(rawFooter).includes('TIME CAP');
   }
 
+  // Structured/library WODs (StructuredWorkoutTimerScreen, e.g. a multi-block
+  // benchmark like "Fight Gone Bad") always send literal "WORK"/"REST" status
+  // text and a "ROUND x/y  •  MODE  •  BLOCCO n/m" footer, never the exact
+  // shapes the standalone screens use. A round-bearing sub-block (EMOM/AMRAP/
+  // Tabata-style) already matches roundsMode above via its "ROUND x/y"
+  // segment. A round-less sub-block (Countdown/Count Up/For Time without its
+  // own rounds) never matches anything else, so it falls back to PLAIN here
+  // instead of the old untouched/tiny generic style. "MODE" itself is always
+  // one of BuilderWorkoutType's English literal labels (COUNTDOWN, COUNT UP,
+  // FOR TIME, EMOM, AMRAP, TABATA, INTERVALS, MANUAL INTERVALS), regardless
+  // of the app's display language, since that enum label is never localized.
+  const PLAIN_BLOCK_LABELS = /^(COUNTDOWN|COUNT UP|FOR TIME)$/;
+
+  function stripPlainModeLabel(rawFooter) {
+    return String(rawFooter || '')
+      .split(/\s*•\s*/)
+      .map(segment => segment.trim())
+      .filter(segment => segment && !PLAIN_BLOCK_LABELS.test(normalize(segment)))
+      .join('  •  ');
+  }
+
   // Visual-only relabel of the running "FOR TIME" status to "IN TIME"
   // (green instead of orange). Every other For Time status (GET READY,
   // OLTRE TIME CAP/OVER TIME CAP/FUERA DEL TIME CAP, COMPLETATO..., PAUSED,
@@ -283,7 +304,23 @@
       activeVisualMode = 'PLAIN';
     } else if (forTimeMode) {
       activeVisualMode = 'FORTIME';
+    } else if (clean !== '') {
+      // Unrecognized shape with real content (a round-less sub-block chained
+      // inside a structured/library WOD): same enlarged plain-clock family
+      // treatment as the standalone Countdown/Count Up screens, instead of
+      // silently keeping whatever mode the previous block left behind.
+      activeVisualMode = 'PLAIN';
     }
+
+    // Each mode branch below only ADDS its own "has-*" class. A structured/
+    // library WOD chains several different block types (and therefore modes)
+    // within a single Cast session, unlike every standalone timer screen
+    // which only ever shows one mode for its whole session — so classes from
+    // an earlier block must be cleared every tick or they keep stacking and
+    // fighting each other's CSS.
+    screen.classList.remove(
+      'has-interval', 'has-emom', 'has-rounds', 'has-amrap', 'has-plain', 'has-fortime'
+    );
 
     const state = visualState(rawStatus);
     screen.className = `timer-screen ${state}`;
@@ -401,16 +438,20 @@
     } else if (activeVisualMode === 'PLAIN') {
       screen.classList.add('has-plain');
 
-      // No rounds at all (Countdown/Count Up): just the enlarged clock,
-      // full width, no left badge.
+      // No rounds at all (Countdown/Count Up, or the same sub-block chained
+      // inside a structured/library WOD): just the enlarged clock, full
+      // width, no left badge. The block-type word itself (COUNTDOWN/COUNT
+      // UP/FOR TIME) is stripped from the footer since it adds nothing once
+      // the clock is already shown enlarged; any round/block info alongside
+      // it is kept and shown bigger, same family treatment as For Time.
       intervalBadge.classList.add('hidden');
       intervalTotal.classList.add('hidden');
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
-      const sourceFooterText = String(rawFooter).trim();
+      const sourceFooterText = stripPlainModeLabel(rawFooter);
       footer.textContent = sourceFooterText;
-      footer.className = 'footer';
+      footer.className = 'footer plain-footer';
       footer.classList.toggle('hidden', !sourceFooterText);
     } else if (forTimeActive) {
       screen.classList.add('has-fortime');

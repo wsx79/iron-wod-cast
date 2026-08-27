@@ -1142,9 +1142,28 @@ html, body {
 
 
 /* ================================================================
-   STANDBY v14 — fixed-width clock (no more shifting as digits change)
+   STANDBY v14 — genuinely fixed-width clock. Orbitron is a geometric
+   display face but its digits are NOT equal-width, so the clock kept
+   shifting as digits changed even with a "9ch" container. Space Mono
+   is an actual monospace font (every character, digits included,
+   shares one identical advance width), so no digit combination can
+   ever change the rendered width — no container-width hack needed.
    ================================================================ */
 .standby-clock {
-  width: 9ch;
+  font-family: "Space Mono", "Courier New", monospace;
+  font-weight: 700;
   text-align: center;
+}
+
+
+/* ================================================================
+   v31 — Structured/library WODs (e.g. starting "Fight Gone Bad"):
+   round-less sub-blocks (Countdown/Count Up/For Time chained inside a
+   multi-block WOD) now render through the PLAIN family mode instead
+   of the old tiny/untouched fallback. Their remaining footer (round
+   or block info, once the bare block-type word is stripped by
+   led-display.js) is shown at the same bigger size as For Time's.
+   ================================================================ */
+.timer-screen.has-plain .footer.plain-footer {
+  font-size: clamp(38px, 4.15vw, 78px) !important;
 }
