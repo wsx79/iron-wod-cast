@@ -1544,6 +1544,24 @@ html, body {
 
 
 /* ================================================================
+   v56 — standby still too big on a real Chromecast display even after
+   v43's scale-back. Clock and weekday/date roughly a third of v43's
+   size each (logo untouched - not reported as a problem).
+   ================================================================ */
+.standby-clock {
+  font-size: clamp(calc(60 * var(--px)), 9vw, calc(180 * var(--px)));
+}
+
+.standby-weekday {
+  font-size: clamp(calc(16 * var(--px)), 2vw, calc(38 * var(--px)));
+}
+
+.standby-date {
+  font-size: clamp(calc(13 * var(--px)), 1.5vw, calc(28 * var(--px)));
+}
+
+
+/* ================================================================
    v44 — AMRAP: the red completed-rounds badge was vertically centered
    on the whole screen (top:50%, translateY(-50%)), which put it far
    below the "AMRAP" title with a lot of dead space above it. Pinned it
