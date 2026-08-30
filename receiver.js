@@ -1,11 +1,12 @@
 (() => {
   'use strict';
 
-  const NAMESPACE = 'urn:x-cast:com.example.crossboxpro.timer';
+  const NAMESPACE = 'urn:x-cast:com.ironwod.cast.timer';
   const statusEl = document.getElementById('statusText');
   const timerEl = document.getElementById('timerText');
   const footerEl = document.getElementById('footerText');
   const timeCapEl = document.getElementById('timeCapText');
+  const screenKindEl = document.getElementById('screenKindText');
 
   let lastStatus = '';
   let lastTimer = '';
@@ -98,46 +99,66 @@
     return words[lang][cue] || cue;
   }
 
+  // Bumped every time a voice cue is (re)started, including by stopVoiceAudio()
+  // itself. A cue's onerror/play().catch fallback captures the id current at
+  // its own start and checks it before speaking - if a newer cue has since
+  // superseded it, the id no longer matches and the stale fallback is
+  // skipped. Without this, cancelling an in-flight cue to start the next one
+  // (e.g. prep countdown "1" superseded by "go" the instant work starts)
+  // still lets "1"'s rejected play() promise fall back to speechSynthesis,
+  // which then speaks over the new cue's audio.
+  let voiceRequestId = 0;
+
   function stopVoiceAudio() {
-    try {
-      voicePlayer.pause();
-      voicePlayer.removeAttribute('src');
-      voicePlayer.load();
-    } catch (_) {}
+    voiceRequestId += 1;
+    if (activeVoiceAudio) {
+      try {
+        activeVoiceAudio.pause();
+        activeVoiceAudio.removeAttribute('src');
+      } catch (_) {}
+    }
     activeVoiceAudio = null;
   }
 
+  // Brand new Audio() per call instead of reusing one paused/reset/replayed
+  // singleton (voicePlayer, still kept only for the initial priming/prefetch
+  // in primeAudioPipeline() below) - same reasoning as playSoundAsset()'s
+  // currentSoundPlayer above: no cost to it, since this WebView can autoplay
+  // any fresh element without a gesture regardless
+  // (mediaPlaybackRequiresUserGesture=false, HdmiTimerDisplayController.kt).
   function playVoiceAsset(name, language) {
+    lastRealCueAtMs = Date.now();
     try {
       stopVoiceAudio();
+      const requestId = voiceRequestId;
 
-      voicePlayer.src = voiceUrl(name, language);
-      voicePlayer.currentTime = 0;
-      voicePlayer.volume = 1.0;
-      activeVoiceAudio = voicePlayer;
+      const player = new Audio(voiceUrl(name, language));
+      player.volume = 1.0;
+      activeVoiceAudio = player;
 
-      voicePlayer.onended = () => {
-        activeVoiceAudio = null;
+      player.onended = () => {
+        if (activeVoiceAudio === player) activeVoiceAudio = null;
       };
 
-      voicePlayer.onerror = () => {
-        if (activeVoiceAudio === voicePlayer) activeVoiceAudio = null;
+      player.onerror = () => {
+        if (activeVoiceAudio === player) activeVoiceAudio = null;
+        if (requestId !== voiceRequestId) return;
         console.warn(
           '[IRON WOD audio] voice asset error:',
           name,
           normalizeLanguage(language),
-          voicePlayer.error ? `code=${voicePlayer.error.code}` : 'unknown'
+          player.error ? `code=${player.error.code}` : 'unknown'
         );
         const spoken = speakCue(localizedFallbackText(name, language), language, true);
         if (!spoken) fallbackSoundForCue(name);
       };
 
-      voicePlayer.load();
-      const result = voicePlayer.play();
+      const result = player.play();
 
       if (result && typeof result.catch === 'function') {
         result.catch(() => {
-          if (activeVoiceAudio === voicePlayer) activeVoiceAudio = null;
+          if (activeVoiceAudio === player) activeVoiceAudio = null;
+          if (requestId !== voiceRequestId) return;
           const spoken = speakCue(localizedFallbackText(name, language), language, true);
           if (!spoken) fallbackSoundForCue(name);
         });
@@ -151,21 +172,48 @@
     }
   }
 
+  // Same supersession guard as voiceRequestId above, for the SOUNDS-mode
+  // beep pipeline: a cue cancelled by a newer one (e.g. the EMOM round-change
+  // beep arriving right as the previous cue was still settling) must not let
+  // its own rejected play()/onerror fall back to a WebAudio tone for the
+  // stale cue on top of (or instead of) the new one.
+  let soundRequestId = 0;
+
+  // The reused singleton <audio> element (soundPlayer) below is only for
+  // priming/prefetching at page load. Actual playback uses a BRAND NEW
+  // Audio() per call instead - this WebView can autoplay any fresh element
+  // without a gesture regardless (mediaPlaybackRequiresUserGesture=false,
+  // set in HdmiTimerDisplayController.kt), so there's no cost to it, and it
+  // ruled out "stale reused element" as a suspect while chasing the cue-
+  // after-a-long-idle-gap bug fixed by audioKeepAliveTick() further down
+  // (the real fix - see its comment).
+  let currentSoundPlayer = null;
+
   function stopSoundAudio() {
-    try {
-      soundPlayer.pause();
-      soundPlayer.currentTime = 0;
-    } catch (_) {}
+    soundRequestId += 1;
+    if (currentSoundPlayer) {
+      try {
+        currentSoundPlayer.pause();
+        currentSoundPlayer.currentTime = 0;
+      } catch (_) {}
+    }
   }
 
   function playSoundAsset(name) {
+    lastRealCueAtMs = Date.now();
     const url = soundUrl(name);
 
     try {
       stopSoundAudio();
+      const requestId = soundRequestId;
 
-      soundPlayer.onerror = () => {
-        const mediaError = soundPlayer.error;
+      const player = new Audio(url);
+      player.volume = 1.0;
+      currentSoundPlayer = player;
+
+      player.onerror = () => {
+        if (requestId !== soundRequestId) return;
+        const mediaError = player.error;
         console.warn(
           '[IRON WOD audio] sound asset error:',
           name,
@@ -175,14 +223,10 @@
         playToneFallback(name);
       };
 
-      soundPlayer.src = url;
-      soundPlayer.currentTime = 0;
-      soundPlayer.volume = 1.0;
-      soundPlayer.load();
-
-      const result = soundPlayer.play();
+      const result = player.play();
       if (result && typeof result.catch === 'function') {
         result.catch(error => {
+          if (requestId !== soundRequestId) return;
           console.warn(
             '[IRON WOD audio] soundPlayer.play() rejected:',
             name,
@@ -299,6 +343,39 @@
     }
   }
 
+  // Keeps the underlying Android audio output route/session "warm". Verified
+  // empirically (not a guess): on the affected hardware, a cue played ~10s
+  // after the previous one is always audible; one played ~60s+ after the
+  // previous one never is. Confirmed fixed for Intervals' REST cue at
+  // 1-minute work/rest by this ping - but EMOM's round-change cue, ALSO on a
+  // 60s cadence, still failed with the ping running every 15s. 15s divides
+  // evenly into 60s (and 30/45s), so every EMOM round boundary risked the
+  // ping firing at nearly the same instant as the real cue - two separate
+  // Audio() elements starting playback within the same moment can contend
+  // for the same output and the real cue loses. Two changes: 13s doesn't
+  // divide evenly into any common WOD duration (60/45/40/30/20s), so it
+  // drifts relative to any round cadence instead of repeatedly landing on
+  // it; and skip a tick outright if a real cue just started, so the two
+  // can never overlap regardless of timing coincidence.
+  let audioKeepAliveTimer = null;
+  let lastRealCueAtMs = 0;
+
+  function audioKeepAliveTick() {
+    if (lastAudioMode === 'SILENT') return;
+    if (Date.now() - lastRealCueAtMs < 2500) return;
+    try {
+      const ping = new Audio(soundUrl('countdown'));
+      ping.volume = 0.03;
+      const result = ping.play();
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+    } catch (_) {}
+  }
+
+  function startAudioKeepAlive() {
+    if (audioKeepAliveTimer) return;
+    audioKeepAliveTimer = setInterval(audioKeepAliveTick, 13000);
+  }
+
   const countdownCue = () => playSoundAsset('countdown');
   const restCue = () => playSoundAsset('rest');
 
@@ -384,6 +461,14 @@
       text.includes('TEMPO SCADUTO') ||
       text.includes('TIEMPO AGOTADO') ||
       text.includes('TERMIN');
+  }
+
+  function isOverTimeCapStatus(status) {
+    const text = normalizeStatus(status);
+    return text === 'OTC' ||
+      text.includes('OVER TIME CAP') ||
+      text.includes('OLTRE TIME CAP') ||
+      text.includes('FUERA DEL TIME CAP');
   }
 
   function maybePlayCue(statusText, timerText, audioMode, voiceLanguage) {
@@ -478,6 +563,16 @@
           if (!playVoiceAsset(cueName, voiceLanguage)) workCue();
         } else {
           workCue();
+        }
+      } else if (isOverTimeCapStatus(status) && !isOverTimeCapStatus(prev)) {
+        // For Time (and any other screen with a soft time cap) keeps running past its cap
+        // instead of stopping, but nothing here previously reacted to that transition -
+        // isFinishStatus/isActiveWorkStatus don't match "OLTRE TIME CAP"/"OVER TIME CAP", so
+        // crossing the cap changed the status text and its color (state-otc) with no sound.
+        if (mode === 'VOICE') {
+          if (!playVoiceAsset('complete', voiceLanguage)) finishCue();
+        } else {
+          finishCue();
         }
       }
     }
@@ -646,9 +741,16 @@
 
   function maybePlayEmomRoundCue(footerText, audioMode, voiceLanguage) {
     const normalized = normalizeStatus(footerText);
-    const match = normalized.match(
-      /^EMOM\s*[·\-]\s*ROUND\s+(\d+)\s*\/\s*(\d+)$/
-    );
+    // Standalone EmomScreen sends "EMOM . ROUND N/total"; structured/library
+    // WOD blocks send "ROUND N/total . EMOM . BLOCCO x/y" (round comes first).
+    // Match the EMOM token and the ROUND N/total pair independently of their
+    // order/separator instead of anchoring the whole string to one shape,
+    // otherwise structured EMOM blocks never match and silently lose every
+    // round-change cue.
+    const hasEmomToken = /\bEMOM\b/.test(normalized);
+    const match = hasEmomToken
+      ? normalized.match(/\bROUND\s+(\d+)\s*\/\s*(\d+)\b/)
+      : null;
 
     if (!match) {
       lastEmomRoundKey = '';
@@ -727,6 +829,8 @@
     timeCapEl.textContent = resolved.timeCapText;
     timeCapEl.classList.toggle('hidden', !resolved.timeCapText);
 
+    if (screenKindEl) screenKindEl.textContent = String(data.screenKind || '');
+
     const normalizedStatus = normalizeStatus(statusText);
     const isConfiguration =
       normalizedStatus.includes('CONFIGURA') ||
@@ -743,6 +847,7 @@
     footerEl.textContent = 'TIMER';
     timeCapEl.textContent = '';
     timeCapEl.classList.add('hidden');
+    if (screenKindEl) screenKindEl.textContent = '';
     statusEl.style.color = '#ff6b00';
     stopVoiceAudio();
     stopSoundAudio();
@@ -758,57 +863,74 @@
 
 
   primeAudioPipeline();
+  startAudioKeepAlive();
 
-  const context = cast.framework.CastReceiverContext.getInstance();
-  let currentHostSenderId = null;
+  // Direct entry point for a host WebView (IronWOD's own HDMI Presentation)
+  // that pushes state via evaluateJavascript instead of a real Cast session.
+  // Same data shape as the Cast Message Channel payload below, so the two
+  // delivery channels stay indistinguishable from updateTimer's/clearTimer's
+  // point of view.
+  window.ironWodReceiver = {
+    updateTimer,
+    clearTimer
+  };
 
-  context.addCustomMessageListener(NAMESPACE, event => {
-    if (!currentHostSenderId) {
-      currentHostSenderId = event.senderId;
-    }
+  // Only wire up the Cast Message Channel when actually hosted by a real
+  // Cast session (index.html loads the CAF SDK script in that case). The
+  // local HDMI bundle never loads that script, so this block is skipped
+  // there and window.ironWodReceiver above is the only delivery path.
+  if (window.cast && window.cast.framework) {
+    const context = cast.framework.CastReceiverContext.getInstance();
+    let currentHostSenderId = null;
 
-    if (event.senderId !== currentHostSenderId) {
-      return;
-    }
-    let data = event.data;
+    context.addCustomMessageListener(NAMESPACE, event => {
+      if (!currentHostSenderId) {
+        currentHostSenderId = event.senderId;
+      }
 
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-      } catch (_) {
+      if (event.senderId !== currentHostSenderId) {
         return;
       }
-    }
+      let data = event.data;
 
-    if (!data || typeof data !== 'object') return;
-
-    if (data.type === 'timer') {
-      if (typeof data.timerText !== 'string') {
-        console.warn('[IRON WOD protocol] invalid timer payload: timerText missing or not a string');
-        return;
-      }
-      updateTimer(data);
-    }
-
-    if (data.type === 'clear') {
-      clearTimer();
-    }
-  });
-
-  context.addEventListener(
-    cast.framework.system.EventType.SENDER_DISCONNECTED,
-    event => {
-      if (event.senderId === currentHostSenderId) {
-        currentHostSenderId = null;
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (_) {
+          return;
+        }
       }
 
-      if (context.getSenders().length === 0) {
+      if (!data || typeof data !== 'object') return;
+
+      if (data.type === 'timer') {
+        if (typeof data.timerText !== 'string') {
+          console.warn('[IRON WOD protocol] invalid timer payload: timerText missing or not a string');
+          return;
+        }
+        updateTimer(data);
+      }
+
+      if (data.type === 'clear') {
         clearTimer();
       }
-    }
-  );
+    });
 
-  context.start({ disableIdleTimeout: true });
+    context.addEventListener(
+      cast.framework.system.EventType.SENDER_DISCONNECTED,
+      event => {
+        if (event.senderId === currentHostSenderId) {
+          currentHostSenderId = null;
+        }
+
+        if (context.getSenders().length === 0) {
+          clearTimer();
+        }
+      }
+    );
+
+    context.start({ disableIdleTimeout: true });
+  }
 
   // disableIdleTimeout only stops the CAF splash/backdrop from taking over;
   // it does nothing about the TV hardware itself deciding the input is idle

@@ -4,23 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <title>IRON WOD Timer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="receiver.css?v=20260827-12">
-  <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <!-- Space Mono / Rajdhani are bundled locally via @font-face in receiver.css
+       (fonts/) instead of Google Fonts - see the comment there. -->
+  <link rel="stylesheet" href="receiver.css?v=20260830-11">
 </head>
 <body>
   <!--
     SOURCE LAYER
-    These are the exact DOM ids expected by the proven working receiver.js.
-    receiver.js owns them completely. The LED code NEVER writes here.
+    These are the exact DOM ids expected by receiver.js. receiver.js owns
+    them completely. The LED code NEVER writes here.
   -->
   <div id="receiverSource" class="receiver-source" aria-hidden="true">
     <div id="statusText">IRON WOD</div>
     <div id="timerText">00:00</div>
     <div id="timeCapText" class="hidden"></div>
     <div id="footerText">TIMER</div>
+    <!-- Only ever populated on the local HDMI Presentation build of this same
+         bundle (never sent over the real Cast Message Channel) - see
+         led-display.js. Stays empty here, which is the correct/expected
+         state for a real Cast session. -->
+    <div id="screenKindText" class="hidden"></div>
   </div>
 
   <!-- STANDBY LAYER: visible only when no timer is active. -->
@@ -42,11 +45,17 @@
     <div id="ledFooter" class="footer">TIMER</div>
   </main>
 
-  <!-- Working Cast receiver FIRST. -->
-  <script src="receiver.js?v=20260827-12"></script>
+  <!-- CAF SDK must load BEFORE receiver.js, so window.cast.framework already
+       exists when receiver.js checks for it and wires up the Cast Message
+       Channel (IronCastProtocol.NAMESPACE in the app). This bundle is kept
+       byte-for-byte in sync with the IronWOD app's local HDMI Presentation
+       build (src/main/assets/cast_receiver/); the CAF script tag here is the
+       only intentional difference. -->
+  <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <script src="receiver.js?v=20260830-11"></script>
 
   <!-- Visual mirror only; it has no Cast namespace/listener/context code. -->
-  <script src="led-display.js?v=20260827-12"></script>
-  <script src="standby.js?v=20260827-12"></script>
+  <script src="led-display.js?v=20260830-11"></script>
+  <script src="standby.js?v=20260830-11"></script>
 </body>
 </html>

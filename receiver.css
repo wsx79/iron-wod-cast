@@ -1,5 +1,66 @@
 
+/* Bundled locally (fonts/) instead of the Google Fonts CDN link the Cast
+   receiver uses: a plain WebView loading this bundle for HDMI output can't
+   reliably guarantee the remote stylesheet lands before first paint, and a
+   fallback font has different metrics that throw off standby-screen sizing
+   (clock/weekday/date). Same families/weights, byte-identical rendering,
+   zero dependency on network timing. */
+@font-face {
+  font-family: "Rajdhani";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/Rajdhani-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Rajdhani";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/Rajdhani-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/SpaceMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/SpaceMono-Bold.woff2") format("woff2");
+}
+
+/* DSEG14 Classic by keshikan (SIL Open Font License 1.1): https://github.com/keshikan/DSEG -
+   used for every text element (status, footer, standby clock/weekday/date, round/interval
+   badges) EXCEPT the main timer clock, which is drawn as CSS-positioned LED segments
+   (led-display.js), not real font glyphs. 14-segment (not 7) so full words stay legible. */
+@font-face {
+  font-family: "DSEG14 Classic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/DSEG14Classic-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DSEG14 Classic";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/DSEG14Classic-Bold.woff2") format("woff2");
+}
+
 :root {
+  /* Overridden at runtime (see index.html) on displays where the WebView's CSS-pixel
+     viewport doesn't match the panel's real physical pixels (some HDMI/USB-C adapters report
+     a densityDpi to Android that doesn't match their panel). Every clamp() min/max font-size
+     bound below is expressed as `calc(N * var(--px))` instead of a literal `Npx` so that
+     correction scales every one of them consistently; left at 1px this is a no-op identical to
+     a literal px value, exactly what Chromecast (and any unaffected display) always gets. */
+  --px: 1px;
   --bg: #000;
   --white: #f4f4f2;
   --muted: #a8a8a8;
@@ -40,7 +101,7 @@ html, body {
   overflow: hidden;
   background: #000;
   color: var(--white);
-  font-family: "Courier New", monospace;
+  font-family: "DSEG14 Classic", "Courier New", monospace;
 }
 
 .top-counter {
@@ -48,7 +109,7 @@ html, body {
   left: 4vw;
   top: 4vh;
   color: var(--blue);
-  font-size: clamp(38px, 5.2vw, 100px);
+  font-size: clamp(calc(38 * var(--px)), 5.2vw, calc(100 * var(--px)));
   font-weight: 700;
   letter-spacing: .05em;
   text-shadow: 0 0 4px currentColor, 0 0 13px currentColor;
@@ -61,7 +122,7 @@ html, body {
   right: 7vw;
   color: var(--orange);
   text-align: center;
-  font-size: clamp(58px, 8.4vw, 158px);
+  font-size: clamp(calc(58 * var(--px)), 8.4vw, calc(158 * var(--px)));
   line-height: .95;
   font-weight: 700;
   letter-spacing: .05em;
@@ -146,7 +207,7 @@ html, body {
 .fallback-timer-text {
   width: 100%;
   text-align: center;
-  font-size: clamp(120px, 20vw, 400px);
+  font-size: clamp(calc(120 * var(--px)), 20vw, calc(400 * var(--px)));
   font-weight: 700;
   line-height: 1;
 }
@@ -158,7 +219,7 @@ html, body {
   right: 8vw;
   text-align: center;
   color: var(--white);
-  font-size: clamp(28px, 3.4vw, 66px);
+  font-size: clamp(calc(28 * var(--px)), 3.4vw, calc(66 * var(--px)));
   font-weight: 700;
   letter-spacing: .05em;
   white-space: nowrap;
@@ -171,7 +232,7 @@ html, body {
   bottom: 5vh;
   color: var(--muted);
   text-align: center;
-  font-size: clamp(30px, 4vw, 76px);
+  font-size: clamp(calc(30 * var(--px)), 4vw, calc(76 * var(--px)));
   font-weight: 700;
   letter-spacing: .045em;
   text-transform: uppercase;
@@ -180,7 +241,7 @@ html, body {
 
 .footer.phase-footer {
   color: var(--orange);
-  font-size: clamp(50px, 6.3vw, 120px);
+  font-size: clamp(calc(50 * var(--px)), 6.3vw, calc(120 * var(--px)));
   letter-spacing: .08em;
   text-shadow: 0 0 4px currentColor, 0 0 13px currentColor;
 }
@@ -222,7 +283,7 @@ html, body {
   left: 17vw !important;
   right: 1vw !important;
   text-align: center !important;
-  font-size: clamp(66px, 9vw, 174px) !important;
+  font-size: clamp(calc(66 * var(--px)), 9vw, calc(174 * var(--px))) !important;
 }
 
 .timer-screen.has-interval .interval-badge {
@@ -239,8 +300,8 @@ html, body {
 
 .timer-screen.has-interval .interval-number {
   color: var(--red) !important;
-  font-family: "Courier New", monospace !important;
-  font-size: clamp(150px, 18vw, 340px) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(150 * var(--px)), 18vw, calc(340 * var(--px))) !important;
   line-height: .82 !important;
   font-weight: 700 !important;
   letter-spacing: -.04em !important;
@@ -294,7 +355,7 @@ html, body {
   bottom: .7vh !important;
   text-align: center !important;
   color: var(--muted) !important;
-  font-size: clamp(18px, 2vw, 38px) !important;
+  font-size: clamp(calc(18 * var(--px)), 2vw, calc(38 * var(--px))) !important;
   font-weight: 700 !important;
   letter-spacing: .03em !important;
 }
@@ -326,21 +387,21 @@ html, body {
   width: 100vw !important;
   top: 2vh !important;
   text-align: center !important;
-  font-size: clamp(28px, 3.8vw, 70px) !important;
+  font-size: clamp(calc(28 * var(--px)), 3.8vw, calc(70 * var(--px))) !important;
   line-height: 1 !important;
   white-space: nowrap !important;
 }
 
 /* Slightly smaller red current-round number so 01/02/... always fits. */
 .timer-screen.has-interval .interval-number {
-  font-size: clamp(125px, 15.8vw, 295px) !important;
+  font-size: clamp(calc(125 * var(--px)), 15.8vw, calc(295 * var(--px))) !important;
   line-height: .84 !important;
 }
 
 /* Bottom info is intentionally more readable, but still secondary. */
 .timer-screen.has-interval .footer.intervals-total-footer {
   bottom: .8vh !important;
-  font-size: clamp(27px, 3.1vw, 58px) !important;
+  font-size: clamp(calc(27 * var(--px)), 3.1vw, calc(58 * var(--px))) !important;
   line-height: 1 !important;
   letter-spacing: .035em !important;
 }
@@ -371,7 +432,7 @@ html, body {
   width: auto !important;
   text-align: center !important;
   color: var(--muted) !important;
-  font-size: clamp(34px, 3.8vw, 72px) !important;
+  font-size: clamp(calc(34 * var(--px)), 3.8vw, calc(72 * var(--px))) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   letter-spacing: .025em !important;
@@ -473,8 +534,8 @@ html, body {
 
 .standby-clock {
   color: #fff;
-  font-family: "Courier New", monospace;
-  font-size: clamp(130px, 18vw, 350px);
+  font-family: "DSEG14 Classic", "Courier New", monospace;
+  font-size: clamp(calc(130 * var(--px)), 18vw, calc(350 * var(--px)));
   font-weight: 700;
   line-height: .92;
   letter-spacing: -.045em;
@@ -499,8 +560,8 @@ html, body {
 }
 
 .standby-clock {
-  font-family: "Orbitron", "Courier New", monospace;
-  font-size: clamp(140px, 20vw, 400px);
+  font-family: "DSEG14 Classic", "Orbitron", "Courier New", monospace;
+  font-size: clamp(calc(140 * var(--px)), 20vw, calc(400 * var(--px)));
   font-weight: 800;
   letter-spacing: 0;
   max-width: 96vw;
@@ -515,8 +576,8 @@ html, body {
 
 .standby-weekday {
   color: var(--orange);
-  font-family: "Rajdhani", "Courier New", monospace;
-  font-size: clamp(38px, 4.6vw, 88px);
+  font-family: "DSEG14 Classic", "Rajdhani", "Courier New", monospace;
+  font-size: clamp(calc(38 * var(--px)), 4.6vw, calc(88 * var(--px)));
   font-weight: 700;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -525,12 +586,35 @@ html, body {
 
 .standby-date {
   color: #bdbdbd;
-  font-family: "Rajdhani", "Courier New", monospace;
-  font-size: clamp(30px, 3.4vw, 64px);
+  font-family: "DSEG14 Classic", "Rajdhani", "Courier New", monospace;
+  font-size: clamp(calc(30 * var(--px)), 3.4vw, calc(64 * var(--px)));
   font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+
+/* ================================================================
+   v36 — standby made much more prominent: logo at least 5x bigger
+   (was capped at a flat 980px regardless of screen size), clock and
+   weekday/date lines doubled.
+   ================================================================ */
+.standby-logo {
+  width: min(85vw, calc(4900 * var(--px)));
+  max-height: 45vh;
+}
+
+.standby-clock {
+  font-size: clamp(calc(280 * var(--px)), 40vw, calc(800 * var(--px)));
+}
+
+.standby-weekday {
+  font-size: clamp(calc(76 * var(--px)), 9.2vw, calc(176 * var(--px)));
+}
+
+.standby-date {
+  font-size: clamp(calc(60 * var(--px)), 6.8vw, calc(128 * var(--px)));
 }
 
 
@@ -550,7 +634,7 @@ html, body {
   width: 100vw !important;
   text-align: center !important;
   transform: none !important;
-  font-size: clamp(66px, 9vw, 174px) !important;
+  font-size: clamp(calc(66 * var(--px)), 9vw, calc(174 * var(--px))) !important;
   line-height: .95 !important;
 }
 
@@ -613,7 +697,7 @@ html, body {
   width: auto !important;
   text-align: center !important;
   color: var(--muted) !important;
-  font-size: clamp(38px, 4.15vw, 78px) !important;
+  font-size: clamp(calc(38 * var(--px)), 4.15vw, calc(78 * var(--px))) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   letter-spacing: .025em !important;
@@ -638,7 +722,7 @@ html, body {
    typography is reserved for the running workout. */
 .timer-screen.has-amrap.state-config .status {
   top: 2vh !important;
-  font-size: clamp(28px, 3.8vw, 70px) !important;
+  font-size: clamp(calc(28 * var(--px)), 3.8vw, calc(70 * var(--px))) !important;
   line-height: 1 !important;
   color: var(--orange) !important;
 }
@@ -669,7 +753,7 @@ html, body {
   width: 100vw !important;
   text-align: center !important;
   transform: none !important;
-  font-size: clamp(66px, 9vw, 174px) !important;
+  font-size: clamp(calc(66 * var(--px)), 9vw, calc(174 * var(--px))) !important;
   line-height: .95 !important;
 }
 
@@ -711,14 +795,14 @@ html, body {
 /* Configuration stays compact. */
 .timer-screen.has-emom.state-config .status {
   top: 2vh !important;
-  font-size: clamp(28px, 3.8vw, 70px) !important;
+  font-size: clamp(calc(28 * var(--px)), 3.8vw, calc(70 * var(--px))) !important;
   line-height: 1 !important;
   color: var(--orange) !important;
 }
 
 /* Finished label stays readable, not gigantic. */
 .timer-screen.has-emom.state-finished .status {
-  font-size: clamp(34px, 4.8vw, 88px) !important;
+  font-size: clamp(calc(34 * var(--px)), 4.8vw, calc(88 * var(--px))) !important;
   color: var(--green) !important;
 }
 
@@ -729,7 +813,7 @@ html, body {
   bottom: .8vh !important;
   width: auto !important;
   text-align: center !important;
-  font-size: clamp(38px, 4.15vw, 78px) !important;
+  font-size: clamp(calc(38 * var(--px)), 4.15vw, calc(78 * var(--px))) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   letter-spacing: .025em !important;
@@ -755,11 +839,11 @@ html, body {
 /* ================================================================
    v23 — EMOM ROUND row enlarged on Chromecast only.
    Android EMOM is intentionally untouched.
-   Previous EMOM footer: clamp(38px, 4.15vw, 78px)
+   Previous EMOM footer: clamp(calc(38 * var(--px)), 4.15vw, calc(78 * var(--px)))
    New size is approximately 3x.
    ================================================================ */
 .timer-screen.has-emom .footer.emom-footer {
-  font-size: clamp(114px, 12.45vw, 234px) !important;
+  font-size: clamp(calc(114 * var(--px)), 12.45vw, calc(234 * var(--px))) !important;
   bottom: 1.2vh !important;
   line-height: .9 !important;
 }
@@ -787,8 +871,8 @@ html, body {
 
 .timer-screen.has-emom .interval-number {
   color: var(--red) !important;
-  font-family: "Courier New", monospace !important;
-  font-size: clamp(125px, 15.8vw, 295px) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(125 * var(--px)), 15.8vw, calc(295 * var(--px))) !important;
   line-height: .84 !important;
   font-weight: 700 !important;
   letter-spacing: -.04em !important;
@@ -797,8 +881,8 @@ html, body {
 
 .timer-screen.has-emom .interval-total {
   color: var(--muted) !important;
-  font-family: "Courier New", monospace !important;
-  font-size: clamp(34px, 4.2vw, 78px) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(34 * var(--px)), 4.2vw, calc(78 * var(--px))) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   letter-spacing: -.02em !important;
@@ -833,8 +917,8 @@ html, body {
 
 .timer-screen.has-amrap .interval-number {
   color: var(--red) !important;
-  font-family: "Courier New", monospace !important;
-  font-size: clamp(112px, 14.2vw, 266px) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(112 * var(--px)), 14.2vw, calc(266 * var(--px))) !important;
   line-height: .84 !important;
   font-weight: 700 !important;
   letter-spacing: -.04em !important;
@@ -850,16 +934,16 @@ html, body {
 
 /* Structured Intervals: slightly smaller red current-interval number. */
 .timer-screen.has-interval .interval-number {
-  font-size: clamp(112px, 14.2vw, 266px) !important;
+  font-size: clamp(calc(112 * var(--px)), 14.2vw, calc(266 * var(--px))) !important;
 }
 
 /* EMOM: slightly bigger red current round and total-rounds numbers. */
 .timer-screen.has-emom .interval-number {
-  font-size: clamp(140px, 17.7vw, 330px) !important;
+  font-size: clamp(calc(140 * var(--px)), 17.7vw, calc(330 * var(--px))) !important;
 }
 
 .timer-screen.has-emom .interval-total {
-  font-size: clamp(39px, 4.8vw, 90px) !important;
+  font-size: clamp(calc(39 * var(--px)), 4.8vw, calc(90 * var(--px))) !important;
 }
 
 
@@ -884,7 +968,7 @@ html, body {
   width: 100vw !important;
   text-align: center !important;
   transform: none !important;
-  font-size: clamp(66px, 9vw, 174px) !important;
+  font-size: clamp(calc(66 * var(--px)), 9vw, calc(174 * var(--px))) !important;
   line-height: .95 !important;
 }
 
@@ -925,14 +1009,14 @@ html, body {
 .timer-screen.has-rounds.state-config .status,
 .timer-screen.has-plain.state-config .status {
   top: 2vh !important;
-  font-size: clamp(28px, 3.8vw, 70px) !important;
+  font-size: clamp(calc(28 * var(--px)), 3.8vw, calc(70 * var(--px))) !important;
   line-height: 1 !important;
   color: var(--orange) !important;
 }
 
 .timer-screen.has-rounds.state-finished .status,
 .timer-screen.has-plain.state-finished .status {
-  font-size: clamp(34px, 4.8vw, 88px) !important;
+  font-size: clamp(calc(34 * var(--px)), 4.8vw, calc(88 * var(--px))) !important;
   color: var(--green) !important;
 }
 
@@ -967,8 +1051,8 @@ html, body {
 
 .timer-screen.has-rounds .interval-number {
   color: var(--red) !important;
-  font-family: "Courier New", monospace !important;
-  font-size: clamp(140px, 17.7vw, 330px) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(140 * var(--px)), 17.7vw, calc(330 * var(--px))) !important;
   line-height: .84 !important;
   font-weight: 700 !important;
   letter-spacing: -.04em !important;
@@ -977,8 +1061,8 @@ html, body {
 
 .timer-screen.has-rounds .interval-total {
   color: var(--muted) !important;
-  font-family: "Courier New", monospace !important;
-  font-size: clamp(39px, 4.8vw, 90px) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(39 * var(--px)), 4.8vw, calc(90 * var(--px))) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   letter-spacing: -.02em !important;
@@ -1033,7 +1117,7 @@ html, body {
   width: 100vw !important;
   text-align: center !important;
   transform: none !important;
-  font-size: clamp(66px, 9vw, 174px) !important;
+  font-size: clamp(calc(66 * var(--px)), 9vw, calc(174 * var(--px))) !important;
   line-height: .95 !important;
 }
 
@@ -1057,7 +1141,7 @@ html, body {
 
 .timer-screen.has-fortime.state-config .status {
   top: 2vh !important;
-  font-size: clamp(28px, 3.8vw, 70px) !important;
+  font-size: clamp(calc(28 * var(--px)), 3.8vw, calc(70 * var(--px))) !important;
   line-height: 1 !important;
   color: var(--orange) !important;
 }
@@ -1067,7 +1151,7 @@ html, body {
    compact; state-otc already inherits its red color from the base rules. */
 .timer-screen.has-fortime.state-otc .status,
 .timer-screen.has-fortime.state-finished .status {
-  font-size: clamp(34px, 4.8vw, 88px) !important;
+  font-size: clamp(calc(34 * var(--px)), 4.8vw, calc(88 * var(--px))) !important;
 }
 
 .timer-screen.has-fortime.state-finished .status {
@@ -1103,7 +1187,7 @@ html, body {
   width: auto !important;
   text-align: center !important;
   color: var(--muted) !important;
-  font-size: clamp(38px, 4.15vw, 78px) !important;
+  font-size: clamp(calc(38 * var(--px)), 4.15vw, calc(78 * var(--px))) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   letter-spacing: .025em !important;
@@ -1115,7 +1199,91 @@ html, body {
    v28 — For Time: time cap footer doubled in size.
    ================================================================ */
 .timer-screen.has-fortime .footer.fortime-footer {
-  font-size: clamp(76px, 8.3vw, 156px) !important;
+  font-size: clamp(calc(76 * var(--px)), 8.3vw, calc(156 * var(--px))) !important;
+}
+
+
+/* ================================================================
+   v42 — For Time (structured/library WOD block with its own position in
+   the sequence, or round-based): red badge next to the clock instead of
+   the full-width enlarged clock, same language/proportions as EMOM/
+   Tabata/Structured Intervals ("the standard timers"). The compound
+   selector (two classes) outranks the plain .has-fortime rules above it
+   in specificity regardless of file order, so this cleanly overrides the
+   full-width clock/no-badge layout only when has-fortime-badge is also
+   present (led-display.js).
+   IMPORTANT: these numbers must match has-emom/has-rounds.has-tabata/
+   has-interval's OWN FINAL values (28vw badge, clock starting at
+   28.5vw, 13vw digit chars, 19vw clock chars - see the "v41 ... confirmed
+   correct by testing" rule further down this file), not their early/
+   superseded declarations earlier in the file (16vw badge, 16.5vw clock,
+   7.7vw digit, 21vw clock chars) that later rules with equal specificity
+   override by simply appearing later - copying those first made the
+   badge/clock look visibly out of proportion compared to every other
+   badge+clock mode.
+   ================================================================ */
+.timer-screen.has-fortime.has-fortime-badge .interval-badge {
+  display: flex !important;
+  flex-direction: column !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  width: 28vw !important;
+  height: min(40vw, 56vh) !important;
+  transform: translateY(-50%) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2.6vh !important;
+}
+
+.timer-screen.has-fortime.has-fortime-badge .interval-number {
+  color: var(--red) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(145 * var(--px)), 18.2vw, calc(340 * var(--px))) !important;
+  line-height: .84 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.04em !important;
+  text-shadow: 0 0 5px currentColor, 0 0 16px currentColor !important;
+}
+
+.timer-screen.has-fortime.has-fortime-badge .interval-total {
+  color: var(--muted) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(68 * var(--px)), 8.4vw, calc(156 * var(--px))) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: -.02em !important;
+}
+
+.timer-screen.has-fortime.has-fortime-badge .timer {
+  left: 28.5vw !important;
+  right: .5vw !important;
+}
+
+/* .led-char/.led-colon is the SAME class the clock digits use (renderDigits)
+   and the badge digits use (renderLedNumber) - these two rules must stay
+   scoped through .timer specifically, or they also resize the badge's own
+   digits to the clock's huge dimensions instead of leaving them to the
+   dedicated .interval-number/.interval-total rules below (this is exactly
+   what went wrong the first time: a giant red bar instead of a small "1"). */
+.timer-screen.has-fortime.has-fortime-badge .timer .led-char {
+  width: min(19vw, 31vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+.timer-screen.has-fortime.has-fortime-badge .timer .led-colon {
+  width: min(2.9vw, 4.7vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+.timer-screen.has-fortime.has-fortime-badge .interval-number .led-char {
+  width: min(13vw, 21.5vh) !important;
+  height: min(24vw, 33vh) !important;
+}
+
+.timer-screen.has-fortime.has-fortime-badge .interval-total .led-char {
+  width: min(2.7vw, 4.5vh) !important;
+  height: min(5vw, 6.9vh) !important;
 }
 
 
@@ -1151,8 +1319,8 @@ html, body {
   align-items: center !important;
   margin-left: 1.2vw !important;
   color: var(--muted) !important;
-  font-family: "Courier New", monospace !important;
-  font-size: clamp(20px, 2.5vw, 46px) !important;
+  font-family: "DSEG14 Classic", "Courier New", monospace !important;
+  font-size: clamp(calc(20 * var(--px)), 2.5vw, calc(46 * var(--px))) !important;
   font-weight: 700 !important;
   line-height: 1.15 !important;
   letter-spacing: .04em !important;
@@ -1164,7 +1332,7 @@ html, body {
    caption slightly bigger.
    ================================================================ */
 .timer-screen.has-interval .footer.intervals-total-footer {
-  font-size: clamp(40px, 4.4vw, 84px) !important;
+  font-size: clamp(calc(40 * var(--px)), 4.4vw, calc(84 * var(--px))) !important;
 }
 
 
@@ -1188,7 +1356,7 @@ html, body {
    ever change the rendered width — no container-width hack needed.
    ================================================================ */
 .standby-clock {
-  font-family: "Space Mono", "Courier New", monospace;
+  font-family: "DSEG14 Classic", "Space Mono", "Courier New", monospace;
   font-weight: 700;
   text-align: center;
 }
@@ -1203,7 +1371,7 @@ html, body {
    led-display.js) is shown at the same bigger size as For Time's.
    ================================================================ */
 .timer-screen.has-plain .footer.plain-footer {
-  font-size: clamp(38px, 4.15vw, 78px) !important;
+  font-size: clamp(calc(38 * var(--px)), 4.15vw, calc(78 * var(--px))) !important;
 }
 
 
@@ -1216,7 +1384,7 @@ html, body {
    resolution (kept in vw so the margin scales too).
    ================================================================ */
 .timer-screen.has-interval .interval-number {
-  font-size: clamp(90px, 10.5vw, 200px) !important;
+  font-size: clamp(calc(90 * var(--px)), 10.5vw, calc(200 * var(--px))) !important;
 }
 
 
@@ -1233,5 +1401,530 @@ html, body {
    specificity) still wins wherever one already exists.
    ================================================================ */
 .timer-screen.state-finished .status {
-  font-size: clamp(34px, 4.8vw, 88px) !important;
+  font-size: clamp(calc(34 * var(--px)), 4.8vw, calc(88 * var(--px))) !important;
+}
+
+
+/* ================================================================
+   v37 — Tabata / manual Intervals: the REST status word already turned
+   blue (state-rest .status), but the clock digits didn't - has-rounds
+   unconditionally forces the clock white with !important for every
+   state, silently beating the base ".state-rest .timer" rule that has
+   no has-rounds prefix to win the specificity tie. Structured
+   Intervals already had this exact override; ROUNDS never did.
+   ================================================================ */
+.timer-screen.has-rounds.state-rest .timer {
+  color: var(--blue) !important;
+}
+
+
+/* ================================================================
+   v38 — EMOM: current round number and total-rounds number both
+   slightly bigger, with a bit more breathing room between them.
+   ================================================================ */
+.timer-screen.has-emom .interval-number {
+  font-size: clamp(calc(145 * var(--px)), 18.2vw, calc(340 * var(--px))) !important;
+}
+
+.timer-screen.has-emom .interval-total {
+  font-size: clamp(calc(68 * var(--px)), 8.4vw, calc(156 * var(--px))) !important;
+}
+
+.timer-screen.has-emom .interval-badge {
+  gap: 2.2vh !important;
+}
+
+
+/* ================================================================
+   v39 — Tabata reuses EMOM's exact numbers/spacing (has-rounds already
+   gives it EMOM's badge layout; only the sizes needed to match).
+   Higher specificity than has-rounds' own rules, so this always wins
+   regardless of source order.
+   ================================================================ */
+.timer-screen.has-rounds.has-tabata .interval-number {
+  font-size: clamp(calc(145 * var(--px)), 18.2vw, calc(340 * var(--px))) !important;
+}
+
+.timer-screen.has-rounds.has-tabata .interval-total {
+  font-size: clamp(calc(68 * var(--px)), 8.4vw, calc(156 * var(--px))) !important;
+}
+
+.timer-screen.has-rounds.has-tabata .interval-badge {
+  gap: 2.2vh !important;
+}
+
+
+/* ================================================================
+   v40 — AMRAP: completed-rounds count roughly tripled and moved to sit
+   close to the clock instead of hugging the far-left screen edge -
+   widened its box and right-aligned the number/caption inside it, then
+   pushed the clock's own left edge over to make room so the two don't
+   overlap. Caption text ("ROUND COMPLETATI") doubled, with more gap
+   between it and the red number above it.
+   ================================================================ */
+.timer-screen.has-amrap .interval-badge {
+  width: 34vw !important;
+  align-items: flex-end !important;
+  padding-right: .6vw !important;
+  gap: 2.2vh !important;
+}
+
+.timer-screen.has-amrap .interval-number {
+  font-size: clamp(calc(336 * var(--px)), 42.6vw, calc(798 * var(--px))) !important;
+}
+
+.timer-screen.has-amrap .interval-total {
+  align-items: flex-end !important;
+  margin-left: 0 !important;
+  font-size: clamp(calc(40 * var(--px)), 5vw, calc(92 * var(--px))) !important;
+}
+
+.timer-screen.has-amrap .timer {
+  left: 35vw !important;
+}
+
+
+/* ================================================================
+   v41 — Manual Intervals reuses AMRAP's exact treatment (has-rounds
+   gives it the current/total round numbers; AMRAP's sizing/position is
+   applied on top). Higher specificity than has-rounds' own rules.
+   ================================================================ */
+.timer-screen.has-rounds.has-manual-intervals .interval-badge {
+  width: 34vw !important;
+  align-items: flex-end !important;
+  padding-right: .6vw !important;
+  gap: 2.2vh !important;
+}
+
+.timer-screen.has-rounds.has-manual-intervals .interval-number {
+  font-size: clamp(calc(336 * var(--px)), 42.6vw, calc(798 * var(--px))) !important;
+}
+
+.timer-screen.has-rounds.has-manual-intervals .interval-total {
+  font-size: clamp(calc(40 * var(--px)), 5vw, calc(92 * var(--px))) !important;
+}
+
+.timer-screen.has-rounds.has-manual-intervals .timer {
+  left: 35vw !important;
+}
+
+
+/* ================================================================
+   v42 — Structured Intervals: current-interval number slightly bigger.
+   The "INTERVALLI N" count number now reuses .intervals-round-number
+   (see led-display.js) so it renders at the same size as the ROUND
+   x/y numbers - no separate rule needed here for that part.
+   ================================================================ */
+.timer-screen.has-interval .interval-number {
+  font-size: clamp(calc(104 * var(--px)), 12.1vw, calc(230 * var(--px))) !important;
+}
+
+
+/* ================================================================
+   v43 — standby v36 turned out too big on a real display; scaled back
+   from roughly 5x/2x to a more moderate ~2.5x logo / ~1.4x clock and
+   weekday/date.
+   ================================================================ */
+.standby-logo {
+  width: min(45vw, calc(2500 * var(--px)));
+  max-height: 34vh;
+}
+
+.standby-clock {
+  font-size: clamp(calc(190 * var(--px)), 27vw, calc(550 * var(--px)));
+}
+
+.standby-weekday {
+  font-size: clamp(calc(50 * var(--px)), 6vw, calc(115 * var(--px)));
+}
+
+.standby-date {
+  font-size: clamp(calc(40 * var(--px)), 4.4vw, calc(84 * var(--px)));
+}
+
+
+/* ================================================================
+   v44 — AMRAP: the red completed-rounds badge was vertically centered
+   on the whole screen (top:50%, translateY(-50%)), which put it far
+   below the "AMRAP" title with a lot of dead space above it. Pinned it
+   near the top instead, roughly level with the title. Caption's two
+   lines ("ROUND"/"COMPLETATI") centered on each other instead of
+   right-edge-aligned, and given a bit more room from the number above.
+   ================================================================ */
+.timer-screen.has-amrap .interval-badge {
+  top: 9vh !important;
+  transform: none !important;
+  gap: 3vh !important;
+}
+
+.timer-screen.has-amrap .interval-total {
+  align-items: center !important;
+}
+
+
+/* ================================================================
+   v45 — the round/interval badge numbers (current round, total rounds,
+   AMRAP completed count, Structured Intervals interval number) now
+   render with the exact same 7-segment LED code as the main clock
+   (see renderLedNumber in led-display.js) instead of text in a font.
+   Sizing is plain CSS box dimensions (min(vw, vh), same technique as
+   the main clock's own .led-char), never a font-size clamp() ceiling -
+   nothing here can be affected by the viewport/density issue that
+   --px corrects for elsewhere, and nothing here depends on font
+   metrics that could make two digits render at different sizes
+   between updates. AMRAP's "ROUND COMPLETATI" text caption is
+   unaffected - it's still real text, only the numbers changed.
+
+   Also fixes Tabata/manual Intervals: they publish their
+   TimerProjectionState through two independent code paths (a live
+   Composable + a background-safe ticker), and only one of them
+   threads screenKind through, so the HDMI receiver was alternating
+   between the has-tabata/has-manual-intervals styling and the
+   generic has-rounds fallback on every publish from the other path.
+   That still needs its own fix in Kotlin; this change at least makes
+   both paths render at a stable, consistent size in the meantime,
+   since neither now depends on which font-size rule is active.
+   ================================================================ */
+.interval-number,
+.interval-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.interval-number .led-char {
+  gap: min(.4vw, 5px);
+}
+
+/* Structured Intervals: current interval number. */
+.timer-screen.has-interval .interval-number .led-char {
+  width: min(4.8vw, 7.8vh) !important;
+  height: min(8.7vw, 12vh) !important;
+}
+
+/* EMOM / Tabata: current round (red) and total rounds (gray), with a
+   visible gap between the two now that both are fixed-size boxes
+   instead of text whose line-height could be squeezed. */
+.timer-screen.has-emom .interval-badge,
+.timer-screen.has-rounds.has-tabata .interval-badge {
+  gap: 2.6vh !important;
+}
+
+.timer-screen.has-emom .interval-number .led-char,
+.timer-screen.has-rounds.has-tabata .interval-number .led-char {
+  width: min(7.7vw, 12.6vh) !important;
+  height: min(14vw, 19.4vh) !important;
+}
+
+.timer-screen.has-emom .interval-total .led-char,
+.timer-screen.has-rounds.has-tabata .interval-total .led-char {
+  width: min(2.7vw, 4.5vh) !important;
+  height: min(5vw, 6.9vh) !important;
+}
+
+/* AMRAP / manual Intervals: completed/current round count (red, ~3x
+   EMOM's), positioned level with the clock instead of centered on the
+   whole screen, with the number top-aligned inside that space instead
+   of vertically centered within it. */
+.timer-screen.has-amrap .interval-badge,
+.timer-screen.has-rounds.has-manual-intervals .interval-badge {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  justify-content: flex-start !important;
+  gap: 4vh !important;
+}
+
+.timer-screen.has-amrap .interval-number .led-char,
+.timer-screen.has-rounds.has-manual-intervals .interval-number .led-char {
+  width: min(11vw, 18.2vh) !important;
+  height: min(20vw, 28vh) !important;
+}
+
+.timer-screen.has-rounds.has-manual-intervals .interval-total .led-char {
+  width: min(3vw, 5vh) !important;
+  height: min(5.6vw, 7.7vh) !important;
+}
+
+
+/* ================================================================
+   v46 — AMRAP / manual Intervals redesign: the badge now sits right
+   beside the clock (small left column) instead of far away with a lot
+   of dead space, at a slightly smaller size than v45's attempt. The
+   clock itself is shrunk and its digits start right after the badge
+   (justify-content: flex-start) instead of hugging the far screen
+   edge, so the two form one visually connected group. Identical rules
+   for has-amrap and has-manual-intervals, as requested.
+   ================================================================ */
+.timer-screen.has-amrap .interval-badge,
+.timer-screen.has-rounds.has-manual-intervals .interval-badge {
+  left: 2vw !important;
+  width: 20vw !important;
+  align-items: center !important;
+}
+
+.timer-screen.has-amrap .interval-number .led-char,
+.timer-screen.has-rounds.has-manual-intervals .interval-number .led-char {
+  width: min(8vw, 13vh) !important;
+  height: min(14.5vw, 20vh) !important;
+}
+
+.timer-screen.has-amrap .interval-total .led-char {
+  width: min(3vw, 5vh) !important;
+  height: min(5.6vw, 7.7vh) !important;
+}
+
+.timer-screen.has-amrap .timer,
+.timer-screen.has-rounds.has-manual-intervals .timer {
+  left: 24vw !important;
+  right: 2vw !important;
+  justify-content: flex-start !important;
+}
+
+.timer-screen.has-amrap .led-char,
+.timer-screen.has-rounds.has-manual-intervals .led-char {
+  width: min(14vw, 23vh) !important;
+  height: min(26vw, 36vh) !important;
+}
+
+.timer-screen.has-amrap .led-colon,
+.timer-screen.has-rounds.has-manual-intervals .led-colon {
+  width: min(2.2vw, 3.4vh) !important;
+  height: min(26vw, 36vh) !important;
+}
+
+
+/* ================================================================
+   v47 — AMRAP / manual Intervals, corrected: v46 shrank the clock too
+   far and left it flex-start-aligned, which abandoned the right-edge
+   alignment every other mode uses and left a dead gap on the right
+   instead of the two halves filling the screen together. Fixed here:
+   - Red number in a wider left column, vertically centered at the
+     exact same height as the clock (top:50%, same translateY/height),
+     instead of pinned to the top on its own.
+   - Clock back to justify-content:flex-end (hugs the right edge like
+     EMOM/Tabata/AMRAP always have), shrunk just enough that its digits
+     naturally start right after the badge's column with only a small
+     gap - the two together span the full screen width edge to edge.
+   - Caption constrained to the badge's own column width so it can't
+     overflow past it.
+   ================================================================ */
+.timer-screen.has-amrap .interval-badge,
+.timer-screen.has-rounds.has-manual-intervals .interval-badge {
+  left: 0 !important;
+  width: 28vw !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: min(40vw, 56vh) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2vh !important;
+}
+
+.timer-screen.has-amrap .interval-number .led-char,
+.timer-screen.has-rounds.has-manual-intervals .interval-number .led-char {
+  width: min(13vw, 21.5vh) !important;
+  height: min(24vw, 33vh) !important;
+}
+
+.timer-screen.has-amrap .interval-total,
+.timer-screen.has-rounds.has-manual-intervals .interval-total {
+  width: 100% !important;
+}
+
+.timer-screen.has-amrap .timer,
+.timer-screen.has-rounds.has-manual-intervals .timer {
+  left: 30vw !important;
+  right: .5vw !important;
+  justify-content: flex-end !important;
+}
+
+.timer-screen.has-amrap .led-char,
+.timer-screen.has-rounds.has-manual-intervals .led-char {
+  width: min(17vw, 28vh) !important;
+  height: min(31.6vw, 44.5vh) !important;
+}
+
+.timer-screen.has-amrap .led-colon,
+.timer-screen.has-rounds.has-manual-intervals .led-colon {
+  width: min(2.6vw, 4.1vh) !important;
+  height: min(31.6vw, 44.5vh) !important;
+}
+
+
+/* ================================================================
+   v48 — clock still too small and left too big a gap after the badge.
+   Bigger digits close both problems together: right-aligned (flex-
+   end) digits that need more room naturally extend further left,
+   toward the badge, as they grow.
+   ================================================================ */
+.timer-screen.has-amrap .timer,
+.timer-screen.has-rounds.has-manual-intervals .timer {
+  left: 29vw !important;
+}
+
+.timer-screen.has-amrap .led-char,
+.timer-screen.has-rounds.has-manual-intervals .led-char {
+  width: min(20.5vw, 33.5vh) !important;
+  height: min(37.5vw, 52.5vh) !important;
+}
+
+.timer-screen.has-amrap .led-colon,
+.timer-screen.has-rounds.has-manual-intervals .led-colon {
+  width: min(3.1vw, 5.1vh) !important;
+  height: min(37.5vw, 52.5vh) !important;
+}
+
+
+/* v49 — one more small bump, per feedback ("ancora leggermente più grande"). */
+.timer-screen.has-amrap .timer,
+.timer-screen.has-rounds.has-manual-intervals .timer {
+  left: 28.5vw !important;
+}
+
+/* v50 — v49 was slightly too big ("leggermente più piccolo"), small step back. */
+.timer-screen.has-amrap .led-char,
+.timer-screen.has-rounds.has-manual-intervals .led-char {
+  width: min(19vw, 31vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+.timer-screen.has-amrap .led-colon,
+.timer-screen.has-rounds.has-manual-intervals .led-colon {
+  width: min(2.9vw, 4.7vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+
+/* ================================================================
+   v51 — the AMRAP/manual-Intervals layout (badge column + red number
+   size + clock size/position) confirmed correct by testing, now
+   applied identically to EMOM, Tabata and Structured Intervals so
+   every badge+clock mode looks consistent. EMOM/Tabata's own gray
+   total-rounds number underneath keeps its own size (v38/v39) - only
+   the red current-number and the clock changed here.
+   ================================================================ */
+.timer-screen.has-emom .interval-badge,
+.timer-screen.has-rounds.has-tabata .interval-badge,
+.timer-screen.has-interval .interval-badge {
+  left: 0 !important;
+  width: 28vw !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: min(40vw, 56vh) !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.timer-screen.has-emom .interval-number .led-char,
+.timer-screen.has-rounds.has-tabata .interval-number .led-char,
+.timer-screen.has-interval .interval-number .led-char {
+  width: min(13vw, 21.5vh) !important;
+  height: min(24vw, 33vh) !important;
+}
+
+/* Structured Intervals' status ("WORK"/"REST · INTERVALLO n/N") used to
+   start at left:17vw to clear the old, narrower 16vw badge - now centered
+   full-width like every other mode, clearing the new wider 28vw badge too. */
+.timer-screen.has-interval .status {
+  left: 0 !important;
+  right: 0 !important;
+}
+
+.timer-screen.has-emom .timer,
+.timer-screen.has-rounds.has-tabata .timer,
+.timer-screen.has-interval .timer {
+  left: 28.5vw !important;
+  right: .5vw !important;
+  justify-content: flex-end !important;
+}
+
+.timer-screen.has-emom .led-char,
+.timer-screen.has-rounds.has-tabata .led-char,
+.timer-screen.has-interval .led-char {
+  width: min(19vw, 31vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+.timer-screen.has-emom .led-colon,
+.timer-screen.has-rounds.has-tabata .led-colon,
+.timer-screen.has-interval .led-colon {
+  width: min(2.9vw, 4.7vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+/* Structured/manual Intervals only (not EMOM/Tabata, which share the box
+   above but aren't reported as clipped): its current-interval number is
+   commonly two digits, which at the shared EMOM/Tabata digit size (13vw
+   per char) renders about 26.4vw wide inside the 28vw badge box - a bare
+   1.6vw margin split both sides when centered, easily eaten by any real
+   HDMI overscan. Shrinking the digit box itself (not the outer badge
+   box/positioning, and not touching justify-content - kept at the
+   inherited "center" from the shared has-emom/has-tabata/has-interval
+   rule, deliberately not overridden here) is the whole fix: centered at
+   9vw/char leaves roughly 4.8vw of margin on each side, real headroom
+   instead of hoping alignment tricks alone are enough. */
+.timer-screen.has-interval .interval-number .led-char {
+  width: min(9vw, 15vh) !important;
+  height: min(17vw, 23.5vh) !important;
+}
+
+
+/* ================================================================
+   v52 — For Time / Count Up / Countdown (and any round-less structured
+   sub-block) had no badge stealing width, so their clock kept its
+   original bigger size while every badge+clock mode got shrunk to fit
+   one - switching between WOD types made the clock visibly change
+   scale for no reason. Same digit size everywhere now; position
+   (full width, right-aligned) is unchanged since there's no badge here.
+   ================================================================ */
+.timer-screen.has-fortime .led-char,
+.timer-screen.has-plain .led-char {
+  width: min(19vw, 31vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+.timer-screen.has-fortime .led-colon,
+.timer-screen.has-plain .led-colon {
+  width: min(2.9vw, 4.7vh) !important;
+  height: min(35vw, 49vh) !important;
+}
+
+
+/* ================================================================
+   v53 — "CONFIGURA IL TIMER" (state-config) had no clock color rule of
+   its own anywhere, generic or per-mode. EMOM/Tabata/manual Intervals/
+   AMRAP/For Time happen to force the clock white unconditionally
+   (regardless of state) for other reasons, which accidentally covered
+   this too - Countdown/Count Up/Structured Intervals don't have such a
+   blanket rule, so their clock fell back to the base ".timer{color:
+   red}" default while setting up the timer, before anything is even
+   running. One rule for every mode instead of patching each
+   separately.
+   ================================================================ */
+.timer-screen.state-config .timer {
+  color: var(--white) !important;
+}
+
+
+/* ================================================================
+   v54 — AMRAP (standalone has no time cap concept, but a structured/
+   library WOD's AMRAP sub-block with one configured does): the generic
+   .time-cap spans left:8vw to right:8vw, which sits inside the badge's
+   0-28vw column and overlapped its caption. Confined to the clock's
+   own region instead, matching its left/right boundaries.
+   ================================================================ */
+.timer-screen.has-amrap .time-cap {
+  left: 29vw !important;
+  right: .5vw !important;
+}
+
+/* v55 — the left/right fix in v54 wasn't enough: at its generic top:72.5vh the
+   time cap still sat over the lower part of the clock digits, since AMRAP's
+   clock box is taller than the mode that position was originally tuned for.
+   Moved to the bottom row instead, where the (otherwise hidden/unused for
+   AMRAP) footer would normally sit - same idea as the "Blocco x/y" line for
+   other modes, not floating in the middle of the screen. */
+.timer-screen.has-amrap .time-cap {
+  top: auto !important;
+  bottom: 1.5vh !important;
 }
