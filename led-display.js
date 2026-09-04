@@ -815,7 +815,42 @@
     }
   }
 
-  const observer = new MutationObserver(sync);
+  // updateTimer() in receiver.js writes statusText/timerText/footerText/
+  // timeCapText/screenKindText as several separate, sequential
+  // textContent assignments, not one atomic update. The local HDMI bundle
+  // delivers state through a single evaluateJavascript() call instead and
+  // never showed this, but on a real Chromecast (message-channel delivery)
+  // the very first update after a fresh cast session can apparently have
+  // its mutations observed before every field has been written - sync()
+  // then classifies the block (has-interval vs has-emom/has-rounds/etc.)
+  // from a still-partial DOM read, and since classification only updates
+  // on a successful match (see activeVisualMode's own comments), a wrong
+  // first guess otherwise sticks for the rest of the session instead of
+  // self-correcting on the very next, fully-updated mutation. Confirmed
+  // on-device: only Intervals' badge (the one whose classification checks
+  // status text AND screenKind together) ends up in a random-per-session
+  // wrong spot on Chromecast, while every other mode (classified from
+  // footer text or screenKind alone) is unaffected.
+  //
+  // Coalescing every mutation-observer callback in a burst down to a
+  // single sync() call via queueMicrotask, instead of calling sync()
+  // directly, means sync() only ever runs once the current synchronous
+  // batch of textContent writes has fully finished (microtasks run after
+  // the current task, never interleaved inside it) - it always reads
+  // whichever DOM state is current when it actually executes, never a
+  // half-written one, regardless of how many mutation records or separate
+  // callback firings led up to it.
+  let syncScheduled = false;
+  function scheduleSync() {
+    if (syncScheduled) return;
+    syncScheduled = true;
+    queueMicrotask(() => {
+      syncScheduled = false;
+      sync();
+    });
+  }
+
+  const observer = new MutationObserver(scheduleSync);
   [sourceStatus, sourceTimer, sourceFooter, sourceTimeCap, sourceScreenKind].filter(Boolean).forEach(node => {
     observer.observe(node, {
       childList: true,
