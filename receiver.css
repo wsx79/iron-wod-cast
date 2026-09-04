@@ -2010,3 +2010,38 @@ html, body {
 .timer-screen.has-amrap .time-cap {
   text-align: right !important;
 }
+
+/* ================================================================
+   v59 — Structured Intervals' current-interval badge was still showing up
+   next to the clock on the right on a real TV instead of the fixed left
+   badge column EMOM/Tabata use, despite v51 already unifying the
+   left/width for .interval-badge - some earlier, more specific rule
+   elsewhere in this file's long history was still winning for at least
+   one of the properties that matters for where the number actually
+   renders. Rather than keep hunting for which of the many past overrides
+   is still interfering, this is a final, unmistakably-last, fully
+   explicit copy of EMOM/Tabata's exact badge position AND digit size
+   (matching v51 + the pre-v51-Intervals-specific-shrink at v51's own
+   line 1931 - undone here per explicit request: same size as EMOM/Tabata,
+   not a smaller Intervals-only one) so there's no ambiguity left about
+   which rule is meant to win.
+   ================================================================ */
+.timer-screen.has-interval .interval-badge {
+  position: absolute !important;
+  left: 0 !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 28vw !important;
+  height: min(40vw, 56vh) !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding-right: 0 !important;
+}
+
+.timer-screen.has-interval .interval-number .led-char {
+  width: min(13vw, 21.5vh) !important;
+  height: min(24vw, 33vh) !important;
+}
