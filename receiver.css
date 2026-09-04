@@ -2045,3 +2045,24 @@ html, body {
   width: min(13vw, 21.5vh) !important;
   height: min(24vw, 33vh) !important;
 }
+
+/* ================================================================
+   v60 — standby screen (logo/clock/weekday/date) scaled up ~1.7x from
+   v56's real-device-tuned size, per explicit request.
+   ================================================================ */
+.standby-logo {
+  width: min(76.5vw, calc(4250 * var(--px))) !important;
+  max-height: 58vh !important;
+}
+
+.standby-clock {
+  font-size: clamp(calc(102 * var(--px)), 15.3vw, calc(306 * var(--px))) !important;
+}
+
+.standby-weekday {
+  font-size: clamp(calc(27 * var(--px)), 3.4vw, calc(65 * var(--px))) !important;
+}
+
+.standby-date {
+  font-size: clamp(calc(22 * var(--px)), 2.6vw, calc(48 * var(--px))) !important;
+}
