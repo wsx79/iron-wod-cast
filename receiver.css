@@ -2108,3 +2108,24 @@ html, body {
 .standby-date {
   font-size: clamp(calc(22 * var(--px)), 2.6vw, calc(49 * var(--px))) !important;
 }
+
+/* ================================================================
+   v63 — standby screen still a touch too big after v62; another ~10%
+   reduction on top of that.
+   ================================================================ */
+.standby-logo {
+  width: min(70vw, calc(3900 * var(--px))) !important;
+  max-height: 54vh !important;
+}
+
+.standby-clock {
+  font-size: clamp(calc(94 * var(--px)), 14vw, calc(281 * var(--px))) !important;
+}
+
+.standby-weekday {
+  font-size: clamp(calc(24 * var(--px)), 3.15vw, calc(59 * var(--px))) !important;
+}
+
+.standby-date {
+  font-size: clamp(calc(20 * var(--px)), 2.3vw, calc(44 * var(--px))) !important;
+}
