@@ -2087,3 +2087,24 @@ html, body {
 .standby-date {
   font-size: clamp(calc(26 * var(--px)), 3.1vw, calc(58 * var(--px))) !important;
 }
+
+/* ================================================================
+   v62 — v61 turned out a bit too big; scaled back down ~15% from there
+   (still bigger than the original v56 baseline, just not as much as v61).
+   ================================================================ */
+.standby-logo {
+  width: min(78vw, calc(4335 * var(--px))) !important;
+  max-height: 60vh !important;
+}
+
+.standby-clock {
+  font-size: clamp(calc(104 * var(--px)), 15.6vw, calc(312 * var(--px))) !important;
+}
+
+.standby-weekday {
+  font-size: clamp(calc(27 * var(--px)), 3.5vw, calc(66 * var(--px))) !important;
+}
+
+.standby-date {
+  font-size: clamp(calc(22 * var(--px)), 2.6vw, calc(49 * var(--px))) !important;
+}
