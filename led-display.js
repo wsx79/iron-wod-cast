@@ -1,12 +1,6 @@
 (() => {
   'use strict';
 
-  // TEMPORARY - lets the debug overlay in index.html prove which build of this
-  // file is actually running (bump alongside the ?v= cache-busting query
-  // string in index.html so a screenshot can never be mistaken for a stale
-  // build again). Remove alongside the rest of the debug overlay.
-  window.ironWodLedDisplayVersion = '20260904-8';
-
   const sourceStatus = document.getElementById('statusText');
   const sourceTimer = document.getElementById('timerText');
   const sourceFooter = document.getElementById('footerText');
@@ -820,11 +814,6 @@
       });
     }
   }
-  // Exposed only so the TEMPORARY debug overlay in index.html can prove this
-  // function actually exists in the currently-loaded script (i.e. that the
-  // WebView isn't serving a stale cached led-display.js) - not used by any
-  // other code. Remove alongside the debug overlay once the bug is fixed.
-  window.ironWodFitDebug = fitOverflowingTextToBounds;
 
   const observer = new MutationObserver(sync);
   [sourceStatus, sourceTimer, sourceFooter, sourceTimeCap, sourceScreenKind].filter(Boolean).forEach(node => {
