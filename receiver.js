@@ -357,6 +357,14 @@
   // drifts relative to any round cadence instead of repeatedly landing on
   // it; and skip a tick outright if a real cue just started, so the two
   // can never overlap regardless of timing coincidence.
+  //
+  // Plays sounds/silence.mp3 (real silence encoded in the file, not just
+  // volume turned down) instead of the countdown beep at a low volume - the
+  // low-volume countdown beep was still audible as a periodic tick on some
+  // real hardware/speakers, which the ping was never meant to be (it exists
+  // purely to keep the audio route warm, not to be heard). Genuine silent
+  // audio still counts as real playback to Android's audio route the same
+  // way the countdown beep did, so the keep-alive effect is unchanged.
   let audioKeepAliveTimer = null;
   let lastRealCueAtMs = 0;
 
@@ -364,8 +372,8 @@
     if (lastAudioMode === 'SILENT') return;
     if (Date.now() - lastRealCueAtMs < 2500) return;
     try {
-      const ping = new Audio(soundUrl('countdown'));
-      ping.volume = 0.03;
+      const ping = new Audio(soundUrl('silence'));
+      ping.volume = 1.0;
       const result = ping.play();
       if (result && typeof result.catch === 'function') result.catch(() => {});
     } catch (_) {}

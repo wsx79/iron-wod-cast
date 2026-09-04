@@ -219,7 +219,10 @@ html, body {
   right: 8vw;
   text-align: center;
   color: var(--white);
-  font-size: clamp(calc(28 * var(--px)), 3.4vw, calc(66 * var(--px)));
+  /* v57 - cut roughly in half (was 28/3.4vw/66): left too little margin for
+     long localized strings ("NESSUN TIME CAP") on a real TV where --px
+     inflates the ceiling. Full text always shown, just smaller. */
+  font-size: clamp(calc(14 * var(--px)), 1.7vw, calc(33 * var(--px)));
   font-weight: 700;
   letter-spacing: .05em;
   white-space: nowrap;
@@ -232,7 +235,9 @@ html, body {
   bottom: 5vh;
   color: var(--muted);
   text-align: center;
-  font-size: clamp(calc(30 * var(--px)), 4vw, calc(76 * var(--px)));
+  /* v57 - cut roughly in half (was 30/4vw/76), same reasoning as .time-cap
+     above. */
+  font-size: clamp(calc(15 * var(--px)), 2vw, calc(38 * var(--px)));
   font-weight: 700;
   letter-spacing: .045em;
   text-transform: uppercase;
@@ -1197,9 +1202,19 @@ html, body {
 
 /* ================================================================
    v28 — For Time: time cap footer doubled in size.
+   v57 — that doubling (76/8.3vw/156, on top of an already-doubled base a
+   few lines up) was the actual cause of "NESSUN TIME CAP" always
+   overflowing on a real TV - a ~250px ceiling at --px's max real-device
+   factor, never touched by the generic .footer/.time-cap cuts elsewhere
+   in this file because this more specific rule wins the cascade. Scaled
+   back to noticeably bigger than the generic footer (this line is meant
+   to stand out) but nowhere near double.
+   v58 — confirmed fitting comfortably on-device at v57's size (no runtime
+   fit-to-width rescue needed), so brought back up ~1.5x from there, same
+   as the Intervals footer above - still real margin left vs. the original.
    ================================================================ */
 .timer-screen.has-fortime .footer.fortime-footer {
-  font-size: clamp(calc(76 * var(--px)), 8.3vw, calc(156 * var(--px))) !important;
+  font-size: clamp(calc(36 * var(--px)), 3.9vw, calc(75 * var(--px))) !important;
 }
 
 
@@ -1332,7 +1347,13 @@ html, body {
    caption slightly bigger.
    ================================================================ */
 .timer-screen.has-interval .footer.intervals-total-footer {
-  font-size: clamp(calc(40 * var(--px)), 4.4vw, calc(84 * var(--px))) !important;
+  /* v57 - cut roughly in half from v30's 40/4.4vw/84 (too tight a margin on
+     a real TV, see the fit-to-width work above), then v58 brought it back
+     up ~1.5x from that cut once confirmed on-device that the cut version no
+     longer needed the runtime fit-to-width rescue at all (real headroom to
+     spare) - this is comfortably readable again while still leaving that
+     margin, instead of the original's near-zero margin. */
+  font-size: clamp(calc(30 * var(--px)), 3.3vw, calc(63 * var(--px))) !important;
 }
 
 
@@ -1342,7 +1363,11 @@ html, body {
    size.
    ================================================================ */
 .timer-screen.has-interval .intervals-round-number {
-  font-size: 2em !important;
+  /* v57 - was 2em (double the rest of the line); v58 brought the line's own
+     base size back up (see above), so this only needs a modest bump from
+     v57's 1.3em to stay proportionate - still short of the original 2em on
+     purpose, real margin intact. */
+  font-size: 1.9em !important;
   font-weight: 800 !important;
 }
 
@@ -1749,6 +1774,28 @@ html, body {
   width: 100% !important;
 }
 
+/* ================================================================
+   v46 — the "ROUND COMPLETATI"/"ROUNDS COMPLETED"/etc caption was
+   centered inside its badge column, which itself sits flush against
+   the screen's left edge (left: 0, see the has-amrap/has-manual-
+   intervals .interval-badge rules above). A short line ("ROUND")
+   centers fine, but a longer localized line ("COMPLETATI") is wider
+   than the badge column and, centered, overflows equally left and
+   right - straight off the physical screen on the left side, since
+   there is no margin left to absorb it there. Confirmed on-device on
+   two unrelated real displays (a Samsung TV and a separate PC
+   monitor, different physicalWidth/devicePixelRatio on each), so this
+   is a plain text-width-vs-box overflow, unrelated to the --px HDMI
+   density correction. Left-aligning instead of centering pins every
+   line's left edge at the badge's own left edge (x=0) so it can never
+   go negative; any extra width from a longer line is absorbed on the
+   right, where the gap to the main clock leaves room for it.
+   ================================================================ */
+.timer-screen.has-amrap .interval-total,
+.timer-screen.has-rounds.has-manual-intervals .interval-total {
+  align-items: flex-start !important;
+}
+
 .timer-screen.has-amrap .timer,
 .timer-screen.has-rounds.has-manual-intervals .timer {
   left: 30vw !important;
@@ -1945,4 +1992,21 @@ html, body {
 .timer-screen.has-amrap .time-cap {
   top: auto !important;
   bottom: 1.5vh !important;
+}
+
+/* ================================================================
+   v56 — same overflow mechanism as v46's interval-total fix, mirrored
+   on the right: v54 moved this box to right: .5vw (almost flush with
+   the screen's right edge), but the generic .time-cap rule still
+   centers its nowrap text within the box. A long localized string
+   ("NESSUN TIME CAP") wider than the box overflows equally left and
+   right when centered, and the right side has essentially no margin
+   left to absorb it - straight off the physical screen. Right-
+   aligning instead pins the text's right edge at the box's own right
+   edge (never past it), absorbing any extra width to the left, where
+   the box already has ~70vw of room. Confirmed on-device on two
+   unrelated real displays (Samsung TV and a separate PC monitor).
+   ================================================================ */
+.timer-screen.has-amrap .time-cap {
+  text-align: right !important;
 }

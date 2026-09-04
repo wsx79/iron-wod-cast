@@ -1,6 +1,12 @@
 (() => {
   'use strict';
 
+  // TEMPORARY - lets the debug overlay in index.html prove which build of this
+  // file is actually running (bump alongside the ?v= cache-busting query
+  // string in index.html so a screenshot can never be mistaken for a stale
+  // build again). Remove alongside the rest of the debug overlay.
+  window.ironWodLedDisplayVersion = '20260904-8';
+
   const sourceStatus = document.getElementById('statusText');
   const sourceTimer = document.getElementById('timerText');
   const sourceFooter = document.getElementById('footerText');
@@ -67,18 +73,71 @@
   // clamp() set it to) just enough that its actual rendered width fits
   // within maxWidth, instead of guessing one fixed font-size that
   // assumes a specific font's character metrics. Different devices can
-  // fall back to different fonts for the same font-family list, so a
-  // static guess that happens to fit on one can still clip on another.
-  // Resets to the CSS size first so it grows back once there's room
-  // again (e.g. a narrower digit combination on the next tick).
-  function fitTextToWidth(el, maxWidth) {
-    el.style.fontSize = '';
+  // fall back to different fonts for the same font-family list (and the
+  // --px HDMI density correction itself can land on a different branch
+  // of a clamp() on different real hardware, producing a visibly
+  // different size for the exact same string - confirmed on-device on a
+  // Samsung TV vs a separate PC monitor), so a static guess/formula that
+  // happens to fit on one can still clip - or collide with a neighboring
+  // element - on another.
+  //
+  // Measuring is done with a Range over the element's contents, not
+  // el.scrollWidth: scrollWidth only reports LAYOUT overflow (a child box
+  // that's intrinsically wider than its parent). A fixed-width box like
+  // .time-cap or .footer.intervals-total-footer (position: absolute with
+  // both left and right set) never grows from its content, so text that
+  // overflows it via white-space: nowrap is pure visual/ink overflow -
+  // scrollWidth on that box stays equal to its own declared width no
+  // matter how much text spills out, so the old check never fired for
+  // these. A Range's bounding rect reflects the actual rendered text
+  // extent regardless of the container's own box model, so it works for
+  // both a shrink-to-fit box (the AMRAP caption lines) and a fixed-width
+  // one (.time-cap, the Intervals footer) alike. Resets to the CSS size
+  // first so it grows back once there's room again (e.g. a narrower
+  // digit combination, or a shorter localized string, on the next
+  // update).
+  function measuredContentWidth(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return range.getBoundingClientRect().width;
+  }
+
+  // Shrinking font-size and re-measuring (an earlier approach) relies on text
+  // width scaling exactly proportionally with font-size, which real on-device
+  // testing showed isn't reliably true here (glyph hinting/rounding, and this
+  // footer mixes two font-sizes via .intervals-round-number's 2em) - it
+  // consistently left ~5-8% still overflowing even after repeated correction
+  // passes.
+  //
+  // Applying transform: scale() directly to `el` (a second earlier approach)
+  // is exact arithmetically but still didn't work, for a different reason
+  // confirmed on-device via the debug overlay: `el` IS the element whose
+  // CSS (position: absolute; left/right) declares the real, fixed box we're
+  // trying to fit inside - scaling `el` itself shrinks THAT box by the same
+  // factor as its overflowing content, since a transform scales everything
+  // about an element's rendering uniformly. Box and content therefore always
+  // shrink together, preserving the exact same overflow ratio no matter what
+  // scale factor is computed - mathematically incapable of ever converging.
+  // (Confirmed: box=3011px, content=3253px, scale(0.925) computed correctly
+  // as 3011/3253 - but the box ends up 3011*0.925=2786px while the content
+  // ends up 3253*0.925=3011px, i.e. still overflowing by exactly the
+  // original 3011/2786 ratio.)
+  //
+  // The fix is a stable third element: wrap el's content in a fresh inner
+  // span and scale THAT, leaving `el` itself - and therefore its real,
+  // CSS-declared box - untouched. `el`'s box no longer moves, so shrinking
+  // the wrapper's content by maxWidth/width is now a straight, one-shot fit.
+  function fitTextToWidth(el, maxWidth, origin) {
+    const wrapper = document.createElement('span');
+    wrapper.style.display = 'inline-block';
+    while (el.firstChild) wrapper.appendChild(el.firstChild);
+    el.appendChild(wrapper);
+
     if (!maxWidth || maxWidth <= 0) return;
-    const width = el.getBoundingClientRect().width;
+    const width = measuredContentWidth(wrapper);
     if (width <= maxWidth || width <= 0) return;
-    const currentSize = parseFloat(getComputedStyle(el).fontSize);
-    if (!currentSize) return;
-    el.style.fontSize = (currentSize * (maxWidth / width)) + 'px';
+    wrapper.style.transformOrigin = (origin || 'center') + ' center';
+    wrapper.style.transform = 'scale(' + (maxWidth / width) + ')';
   }
 
   function renderDigits(value) {
@@ -723,7 +782,49 @@
     // time, positioned independently enough to collide with the clock or footer.
     timeCap.textContent = capText;
     timeCap.classList.toggle('hidden', !String(capText).trim() || forTimeActive);
+
+    fitOverflowingTextToBounds();
   }
+
+  // Single overflow guard for every mode instead of one bespoke fitTextToWidth
+  // call per element/branch, added piecemeal as each got reported clipped on
+  // a real device. A long localized string can render wider than its box on
+  // some real HDMI/USB-C adapter or monitor regardless of which mode set it
+  // (--px's own correction factor can differ enough between two real
+  // displays to push the exact same clamp() rule down a different branch on
+  // each - confirmed on-device: a Samsung TV and a separate PC monitor
+  // disagreed on both direction and size for the same string), so this runs
+  // unconditionally at the end of every render pass over the fixed, known
+  // set of "must never overflow its own box" elements - status/footer/time-
+  // cap, plus every text line inside the round badge - rather than trusting
+  // each branch above to remember to call it for whatever it just set.
+  function fitOverflowingTextToBounds() {
+    // el itself is never transformed (fitTextToWidth scales an inner wrapper
+    // instead, see its own doc comment for why), so el's own box measurement
+    // here is always accurate without needing to reset anything first.
+    [status, footer, timeCap].forEach(el => {
+      if (!el || el.classList.contains('hidden')) return;
+      fitTextToWidth(el, el.getBoundingClientRect().width);
+    });
+
+    if (intervalTotal && !intervalTotal.classList.contains('hidden')) {
+      const budget = intervalTotal.getBoundingClientRect().width;
+      Array.from(intervalTotal.children).forEach(lineEl => {
+        if (lineEl.textContent && lineEl.textContent.trim()) {
+          // Left-anchored: these lines are left-aligned against the badge's
+          // own left edge (receiver.css), which is itself flush against the
+          // screen edge - shrinking from the left would reopen the original
+          // off-screen clip this was fixed for.
+          fitTextToWidth(lineEl, budget, 'left');
+        }
+      });
+    }
+  }
+  // Exposed only so the TEMPORARY debug overlay in index.html can prove this
+  // function actually exists in the currently-loaded script (i.e. that the
+  // WebView isn't serving a stale cached led-display.js) - not used by any
+  // other code. Remove alongside the debug overlay once the bug is fixed.
+  window.ironWodFitDebug = fitOverflowingTextToBounds;
 
   const observer = new MutationObserver(sync);
   [sourceStatus, sourceTimer, sourceFooter, sourceTimeCap, sourceScreenKind].filter(Boolean).forEach(node => {
