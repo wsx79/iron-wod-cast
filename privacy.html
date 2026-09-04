@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Privacy Policy — IRON WOD</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      background: #0b0b0d;
+      color: #e8e8ea;
+      font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    h1 {
+      font-size: 1.8em;
+      margin-bottom: 0;
+      color: #ff3b30;
+    }
+    .updated {
+      color: #9a9aa2;
+      font-size: .9em;
+      margin-top: 4px;
+      margin-bottom: 2em;
+    }
+    h2 {
+      font-size: 1.15em;
+      margin-top: 2em;
+      color: #ffffff;
+      border-bottom: 1px solid #2a2a2e;
+      padding-bottom: .3em;
+    }
+    a { color: #4da3ff; }
+    ul { padding-left: 1.3em; }
+    .back {
+      display: inline-block;
+      margin-bottom: 2em;
+      color: #9a9aa2;
+      text-decoration: none;
+      font-size: .9em;
+    }
+    .back:hover { color: #e8e8ea; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="about.html">&larr; IRON WOD</a>
+    <h1>Privacy Policy — IRON WOD</h1>
+    <p class="updated">Last updated: 4 September 2026</p>
+
+    <p>IRON WOD (the <strong>&ldquo;App&rdquo;</strong>) is an Android workout timer, workout log and training-analysis application.</p>
+
+    <h2>1. Data stored by IRON WOD</h2>
+    <p>IRON WOD does not require an IRON WOD account and does not operate a developer-controlled cloud backend for users' workout data.</p>
+    <p>The App stores training and configuration data locally on the user's device, which may include:</p>
+    <ul>
+      <li>workout sessions, results and workout history;</li>
+      <li>custom WODs and workout configuration;</li>
+      <li>exercise catalogue data and user-created exercises;</li>
+      <li>max lifts and performance records;</li>
+      <li>athlete/profile information entered by the user;</li>
+      <li>optional heart-rate data collected during a training session when a compatible Bluetooth heart-rate device is connected;</li>
+      <li>Iron Coach, analytics, progress and training-related data derived from locally stored workout information;</li>
+      <li>App settings such as language, measurement units, timer preferences, sound/voice options and equipment preferences.</li>
+    </ul>
+    <p>IRON WOD does not sell this training data and does not upload it to an IRON WOD developer server.</p>
+
+    <h2>2. Optional Google Drive backup</h2>
+    <p>IRON WOD offers an optional cloud backup feature using the user's own Google account. When enabled by the user, the App uploads a single backup file (containing the same locally stored workout/training data described in Section 1) to a private, app-specific storage area of the user's Google Drive known as the <strong>App Data Folder</strong>.</p>
+    <p>The App Data Folder is not visible in the user's regular Google Drive file list and cannot be accessed by any other app or by the developer - only IRON WOD, running on a device where the user has signed in, can read or write that file. IRON WOD only requests the minimal Google Drive scope needed for this (<code>drive.appdata</code>) and never requests access to the user's other Drive files.</p>
+    <p>This backup is used solely to let the user restore their own data (e.g. after reinstalling the App or on a new device). The developer does not access, view or process the contents of this backup. Users can disable this feature and revoke IRON WOD's Google Drive access at any time from their Google Account settings.</p>
+
+    <h2>3. Bluetooth and heart-rate devices</h2>
+    <p>IRON WOD can optionally connect to compatible Bluetooth Low Energy (BLE) heart-rate devices.</p>
+    <p>When this feature is used, the App may access nearby-device/Bluetooth functionality in order to discover and communicate with the selected device. Heart-rate samples used by IRON WOD are processed as part of the training session and stored locally where the relevant workout/session feature saves them.</p>
+    <p>On older Android versions, Android may require location-related permission for Bluetooth device discovery even when IRON WOD is not using that permission to build a location history.</p>
+    <p>The heart-rate feature is optional and the App can be used without connecting a Bluetooth device.</p>
+
+    <h2>4. Google Cast</h2>
+    <p>IRON WOD includes optional Google Cast support so timers or workout information can be displayed on compatible Cast devices or televisions.</p>
+    <p>When Cast is used, Google Play services / the Google Cast SDK may process device, network and Cast-interaction information required to discover, connect to and communicate with Cast devices. Google states that the Cast SDK may also collect anonymized Cast interaction and app-usage information for improving the Cast experience.</p>
+    <p>IRON WOD uses a custom Cast web receiver to display the timer on a compatible TV or Cast device. The receiver is hosted publicly on GitHub Pages at:</p>
+    <p><strong><a href="https://wsx79.github.io/iron-wod-cast/">https://wsx79.github.io/iron-wod-cast/</a></strong></p>
+    <p>Related static assets used by the receiver, such as HTML, JavaScript, CSS and optional voice/audio resources, may be loaded from the same GitHub-hosted location.</p>
+    <p>When Cast is active, the receiver may download these public assets over the Internet. This is limited to resources needed to display and announce the timer. It is <strong>not</strong> used to upload the user's workout history to GitHub or to an IRON WOD developer server.</p>
+    <p>Users who do not want this network activity can simply avoid using the Cast feature.</p>
+
+    <h2>5. Translation features</h2>
+    <p>IRON WOD may use Google ML Kit on-device translation and language-identification technology for supported translation features, such as assisting with exercise text.</p>
+    <p>ML Kit translation uses language models downloaded to the device when required. Network access may therefore be used to download or update those models. Translation is performed using the ML Kit on-device translation functionality.</p>
+
+    <h2>6. Google Play services</h2>
+    <p>IRON WOD uses Google Play-related components for features such as Google Cast, Google Sign-In / Drive backup, and the optional Google Play in-app review flow. Those Google components may process technical information according to Google's own terms and privacy policies.</p>
+
+    <h2>7. Permissions</h2>
+    <p>Depending on the Android version and features used, IRON WOD may request or declare permissions including:</p>
+    <ul>
+      <li><strong>Internet / network state</strong> — used by network-dependent components such as Google Cast, Google Drive backup, Google Play services and ML Kit model downloads;</li>
+      <li><strong>Bluetooth / Nearby devices</strong> — used for compatible BLE heart-rate devices and related device discovery;</li>
+      <li><strong>Nearby Wi-Fi devices</strong> — used where required by Android for nearby-device functionality such as Cast;</li>
+      <li><strong>Location on older Android versions</strong> — may be required by the Android Bluetooth scanning model on those versions;</li>
+      <li><strong>Vibration</strong> — used for timer feedback;</li>
+      <li><strong>Wake lock</strong> — used where necessary to support reliable timer/session behaviour while the device is active;</li>
+      <li><strong>Notifications</strong> — may be used by supported Android/system components where notification permission is required.</li>
+    </ul>
+    <p>Permissions are used only for the associated App functionality.</p>
+
+    <h2>8. Android backup and device transfer</h2>
+    <p>Depending on the user's Android and Google backup settings, locally stored App data may be included in Android backup or device-transfer mechanisms. These services are controlled by the operating system and/or the user's Google/device settings, not by an IRON WOD developer server.</p>
+
+    <h2>9. Data sharing and sale</h2>
+    <p>IRON WOD does <strong>not sell</strong> users' personal or workout data.</p>
+    <p>The developer does not intentionally share users' locally stored workout history with advertisers or data brokers. Information may be processed by third-party platform/SDK providers only when required for the optional functionality described above, such as Google Cast, Google Drive backup, ML Kit model delivery or Google Play services.</p>
+
+    <h2>10. Data control and deletion</h2>
+    <p>Users can manage or delete workout/session data through the App where the relevant controls are available, including deleting their Google Drive backup by disabling the backup feature and removing IRON WOD's access from their Google Account.</p>
+    <p>Uninstalling IRON WOD removes the App's local data from the device, subject to copies that may remain in Android/Google/device backups controlled by the user or platform, including any Google Drive backup the user chose to create.</p>
+    <p>If the App provides backup/export functionality, exported copies remain under the user's control and must be deleted separately if no longer wanted.</p>
+
+    <h2>11. Children's privacy</h2>
+    <p>IRON WOD is a fitness and training application intended for general athletes and is not specifically directed to children under 13.</p>
+
+    <h2>12. Security</h2>
+    <p>IRON WOD is designed so that core workout information remains on the user's device, or in the user's own Google Drive App Data Folder when backup is enabled, rather than being stored in an IRON WOD developer-operated cloud account. No method of electronic storage or device security is completely risk-free, and users should protect their device, Google account and any exported backup files appropriately.</p>
+
+    <h2>13. Changes to this Privacy Policy</h2>
+    <p>This Privacy Policy may be updated when App functionality, third-party SDKs or legal requirements change. The current version will show its latest revision date at the top of this document.</p>
+
+    <h2>14. Contact</h2>
+    <p><strong>Developer:</strong> Fabio Serra<br>
+    <strong>Privacy contact:</strong> <a href="mailto:ironwodapp@proton.me">ironwodapp@proton.me</a></p>
+  </main>
+</body>
+</html>
