@@ -2149,3 +2149,20 @@ html, body {
 .standby-date {
   font-size: clamp(calc(17 * var(--px)), 1.95vw, calc(37 * var(--px))) !important;
 }
+
+/* ================================================================
+   v65 — Intervals' badge box sits flush against the left edge (left:0,
+   see v59), and its digit(s) were centered inside it - the same overflow
+   mechanism as v46/v56 elsewhere in this file: centering content in a box
+   with zero margin on one side means any extra width (a two-digit
+   interval count, real-device rounding) bleeds off screen on that side
+   instead of into open space. Left-aligning pins the digit's own left
+   edge at the badge's left edge (x=0, never negative) and lets any extra
+   width grow rightward, where the badge's own 28vw column still has room
+   before the clock starts. EMOM/Tabata/AMRAP/manual-Intervals keep their
+   existing center alignment untouched - only Intervals was reported
+   affected.
+   ================================================================ */
+.timer-screen.has-interval .interval-badge {
+  justify-content: flex-start !important;
+}
