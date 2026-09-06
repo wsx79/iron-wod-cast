@@ -1,6 +1,6 @@
 # Privacy Policy — IRON WOD
 
-**Last updated: 4 September 2026**
+**Last updated: 6 September 2026**
 
 This file mirrors the version hosted at [wsx79.github.io/iron-wod-cast/privacy.html](https://wsx79.github.io/iron-wod-cast/privacy.html), which is the canonical, linked-to copy.
 
@@ -57,21 +57,28 @@ When Cast is active, the receiver may download these public assets over the Inte
 
 Users who do not want this network activity can simply avoid using the Cast feature.
 
-## 5. Translation features
+## 5. Camera and WOD scanner (OCR)
+
+IRON WOD includes an optional feature that uses the device camera to scan a printed or handwritten WOD (workout) and convert it to text using on-device optical character recognition (OCR), powered by Google ML Kit Text Recognition.
+
+When this feature is used, the App accesses the camera only to capture the image being scanned. Image processing is performed on-device: camera frames used for text recognition are not uploaded to an IRON WOD developer server. The App only requests camera access when the user actively opens the WOD scanner feature, and the feature can be declined or ignored; IRON WOD can be used without ever granting camera permission.
+
+## 6. Translation features
 
 IRON WOD may use Google ML Kit on-device translation and language-identification technology for supported translation features, such as assisting with exercise text.
 
 ML Kit translation uses language models downloaded to the device when required. Network access may therefore be used to download or update those models. Translation is performed using the ML Kit on-device translation functionality.
 
-## 6. Google Play services
+## 7. Google Play services
 
 IRON WOD uses Google Play-related components for features such as Google Cast, Google Sign-In / Drive backup, and the optional Google Play in-app review flow. Those Google components may process technical information according to Google's own terms and privacy policies.
 
-## 7. Permissions
+## 8. Permissions
 
 Depending on the Android version and features used, IRON WOD may request or declare permissions including:
 
 - **Internet / network state** — used by network-dependent components such as Google Cast, Google Drive backup, Google Play services and ML Kit model downloads;
+- **Camera** — used only for the optional WOD scanner (OCR) feature, to capture the image of a workout to be recognised;
 - **Bluetooth / Nearby devices** — used for compatible BLE heart-rate devices and related device discovery;
 - **Nearby Wi-Fi devices** — used where required by Android for nearby-device functionality such as Cast;
 - **Location on older Android versions** — may be required by the Android Bluetooth scanning model on those versions;
@@ -81,17 +88,17 @@ Depending on the Android version and features used, IRON WOD may request or decl
 
 Permissions are used only for the associated App functionality.
 
-## 8. Android backup and device transfer
+## 9. Android backup and device transfer
 
 Depending on the user's Android and Google backup settings, locally stored App data may be included in Android backup or device-transfer mechanisms. These services are controlled by the operating system and/or the user's Google/device settings, not by an IRON WOD developer server.
 
-## 9. Data sharing and sale
+## 10. Data sharing and sale
 
 IRON WOD does **not sell** users' personal or workout data.
 
 The developer does not intentionally share users' locally stored workout history with advertisers or data brokers. Information may be processed by third-party platform/SDK providers only when required for the optional functionality described above, such as Google Cast, Google Drive backup, ML Kit model delivery or Google Play services.
 
-## 10. Data control and deletion
+## 11. Data control and deletion
 
 Users can manage or delete workout/session data through the App where the relevant controls are available, including deleting their Google Drive backup by disabling the backup feature and removing IRON WOD's access from their Google Account.
 
@@ -99,19 +106,19 @@ Uninstalling IRON WOD removes the App's local data from the device, subject to c
 
 If the App provides backup/export functionality, exported copies remain under the user's control and must be deleted separately if no longer wanted.
 
-## 11. Children's privacy
+## 12. Children's privacy
 
 IRON WOD is a fitness and training application intended for general athletes and is not specifically directed to children under 13.
 
-## 12. Security
+## 13. Security
 
 IRON WOD is designed so that core workout information remains on the user's device, or in the user's own Google Drive App Data Folder when backup is enabled, rather than being stored in an IRON WOD developer-operated cloud account. No method of electronic storage or device security is completely risk-free, and users should protect their device, Google account and any exported backup files appropriately.
 
-## 13. Changes to this Privacy Policy
+## 14. Changes to this Privacy Policy
 
 This Privacy Policy may be updated when App functionality, third-party SDKs or legal requirements change. The current version will show its latest revision date at the top of this document.
 
-## 14. Contact
+## 15. Contact
 
 **Developer:** Fabio Serra  
 **Privacy contact:** ironwodapp@proton.me
