@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IRON WOD · Guida</title>
+<meta name="description" content="Guida completa a IRON WOD: timer, WOD a intervalli, scansione lavagna, Smart WOD, benchmark, massimali, History Pro, Iron Coach, cardio, Chromecast e backup.">
+<link rel="icon" href="../iron_wod_logo.png">
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --surface: #151518;
+    --surface-2: #1d1d21;
+    --border: #2a2a30;
+    --orange: #ff6a00;
+    --orange-soft: #ff8a3d;
+    --blue: #3b82f6;
+    --green: #51d88a;
+    --red: #ff5d5d;
+    --text: #f7f7f8;
+    --muted: #a8a8b0;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--orange-soft); }
+
+  /* top bar */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(11, 11, 13, .92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar-inner {
+    max-width: 1080px; margin: 0 auto; padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 900; letter-spacing: .02em; }
+  .brand img { width: 32px; height: 32px; border-radius: 8px; }
+  .brand b { color: var(--orange); }
+  .spacer { flex: 1; }
+  .langs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+  .langs button {
+    background: none; border: 0; color: var(--muted); font: inherit; font-weight: 800; font-size: 13px;
+    padding: 5px 10px; border-radius: 7px; cursor: pointer;
+  }
+  .langs button[aria-pressed="true"] { background: var(--orange); color: #000; }
+
+  /* hero */
+  header.hero { max-width: 1080px; margin: 0 auto; padding: 48px 16px 24px; }
+  .hero h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 1.05; margin: 0 0 12px; font-weight: 900; }
+  .hero h1 span { color: var(--orange); }
+  .hero p.lead { color: var(--muted); font-size: 1.15rem; max-width: 720px; margin: 0 0 22px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 800;
+    padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border); color: var(--text); background: var(--surface);
+  }
+  .btn.primary { background: var(--orange); color: #000; border-color: var(--orange); }
+
+  /* index */
+  nav.toc { max-width: 1080px; margin: 0 auto; padding: 8px 16px 8px; }
+  .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 8px; }
+  .toc a {
+    display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-weight: 700; font-size: 14px;
+  }
+  .toc a:hover { border-color: var(--orange); }
+  .num {
+    flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+    background: rgba(255, 106, 0, .15); color: var(--orange); font-weight: 900; font-size: 12px;
+  }
+
+  /* sections */
+  main { max-width: 1080px; margin: 0 auto; padding: 8px 16px 64px; }
+  section.s { border-top: 1px solid var(--border); padding: 40px 0 8px; }
+  .s-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .s-head .num { width: 34px; height: 34px; font-size: 14px; border-radius: 10px; }
+  .s h2 { font-size: clamp(1.4rem, 3.6vw, 1.9rem); margin: 0; font-weight: 900; }
+  .s .intro { color: var(--muted); font-size: 1.05rem; margin: 6px 0 20px; max-width: 760px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  @media (min-width: 900px) {
+    .layout.with-shots { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+    .layout.with-shots .shots { position: sticky; top: 80px; }
+  }
+  .items { display: grid; gap: 10px; }
+  .item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+  .item h3 { margin: 0 0 4px; font-size: 1.02rem; font-weight: 800; }
+  .item p { margin: 0; color: var(--muted); }
+  .item ul { margin: 6px 0 0; padding-left: 1.2em; color: var(--muted); }
+  .item li { margin: 2px 0; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: .04em; padding: 2px 7px; border-radius: 6px; margin-left: 6px; vertical-align: 2px; }
+  .tag.new { background: rgba(81, 216, 138, .16); color: var(--green); }
+  ol.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: grid; gap: 10px; }
+  ol.steps li {
+    counter-increment: step; position: relative; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px 14px 58px; color: var(--muted);
+  }
+  ol.steps li b { color: var(--text); }
+  ol.steps li::before {
+    content: counter(step); position: absolute; left: 14px; top: 13px; width: 30px; height: 30px; border-radius: 9px;
+    display: grid; place-items: center; background: var(--orange); color: #000; font-weight: 900; font-size: 14px;
+  }
+  .tip {
+    margin-top: 14px; border-left: 3px solid var(--orange); background: rgba(255, 106, 0, .08);
+    padding: 10px 14px; border-radius: 0 12px 12px 0; color: var(--text);
+  }
+  .tip b { color: var(--orange-soft); }
+
+  /* screenshots */
+  .shots { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+  @media (min-width: 900px) { .shots { flex-direction: column; overflow: visible; } }
+  figure.shot { margin: 0; flex: none; width: 230px; scroll-snap-align: start; }
+  @media (min-width: 900px) { figure.shot { width: 100%; } }
+  figure.shot img {
+    display: block; width: 100%; height: auto; border-radius: 22px; border: 1px solid var(--border);
+    background: var(--surface); cursor: zoom-in;
+  }
+  figure.shot figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; text-align: center; }
+
+  /* lightbox */
+  .lb { position: fixed; inset: 0; background: rgba(0, 0, 0, .9); display: none; place-items: center; z-index: 50; padding: 16px; }
+  .lb.open { display: grid; }
+  .lb img { max-width: 100%; max-height: 92vh; border-radius: 18px; }
+
+  footer { border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+  footer .in { max-width: 1080px; margin: 0 auto; padding: 24px 16px 40px; display: flex; flex-wrap: wrap; gap: 8px 20px; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="bar-inner">
+    <a class="brand" href="#top"><img src="../iron_wod_logo.png" alt=""><span>IRON <b>WOD</b></span></a>
+    <div class="spacer"></div>
+    <div class="langs" role="group" aria-label="Language">
+      <button data-lang="it">IT</button>
+      <button data-lang="en">EN</button>
+      <button data-lang="es">ES</button>
+    </div>
+  </div>
+</div>
+
+<header class="hero" id="top">
+  <h1 data-i="heroTitle"></h1>
+  <p class="lead" data-i="heroLead"></p>
+  <div class="cta">
+    <a class="btn primary" href="https://play.google.com/store/apps/details?id=com.ironwod.app" data-i="ctaPlay"></a>
+    <a class="btn" href="#s-start" data-i="ctaStart"></a>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Index"><div class="toc-grid" id="toc"></div></nav>
+<main id="content"></main>
+
+<footer><div class="in">
+  <span>IRON WOD · Fabio Serra · <a href="mailto:ironwodapp@proton.me">ironwodapp@proton.me</a></span>
+  <a href="../about.html" data-i="fAbout"></a>
+  <a href="../privacy.html" data-i="fPrivacy"></a>
+</div></footer>
+
+<div class="lb" id="lb"><img alt=""></div>
+
+<script>
+// Every text of the page, per language. Sections render from SECTIONS below.
+const UI = {
+  heroTitle: { it: 'Tutto quello che fa <span>IRON WOD</span>', en: 'Everything <span>IRON WOD</span> does', es: 'Todo lo que hace <span>IRON WOD</span>' },
+  heroLead: {
+    it: 'Timer per il cross training, WOD a intervalli, scansione della lavagna, benchmark, massimali, analisi e un coach che legge i tuoi dati. Senza account: i tuoi allenamenti restano sul tuo telefono.',
+    en: 'Cross-training timers, interval WODs, whiteboard scanning, benchmarks, max lifts, analytics and a coach that reads your data. No account: your training stays on your phone.',
+    es: 'Temporizadores de cross training, WOD por intervalos, escaneo de la pizarra, benchmarks, máximos, análisis y un coach que lee tus datos. Sin cuenta: tus entrenamientos se quedan en tu teléfono.'
+  },
+  ctaPlay: { it: 'Scarica su Google Play', en: 'Get it on Google Play', es: 'Descárgala en Google Play' },
+  ctaStart: { it: 'Inizia a leggere ↓', en: 'Start reading ↓', es: 'Empieza a leer ↓' },
+  fAbout: { it: 'Informazioni', en: 'About', es: 'Información' },
+  fPrivacy: { it: 'Privacy', en: 'Privacy', es: 'Privacidad' },
+  tip: { it: 'Consiglio', en: 'Tip', es: 'Consejo' }
+};
+
+const SECTIONS = [
+  {
+    id: 'start',
+    title: { it: 'Primi passi', en: 'Getting started', es: 'Primeros pasos' },
+    intro: {
+      it: 'La Home raccoglie l\'atleta attivo, le azioni rapide, il consiglio di Iron Coach e le ultime sessioni. Il menu in alto a sinistra apre tutte le sezioni.',
+      en: 'Home shows the active athlete, quick actions, today\'s Iron Coach advice and your latest sessions. The menu at the top left opens every section.',
+      es: 'La Home reúne el atleta activo, las acciones rápidas, el consejo de Iron Coach y las últimas sesiones. El menú arriba a la izquierda abre todas las secciones.'
+    },
+    shots: [['home', { it: 'Home', en: 'Home', es: 'Home' }], ['drawer', { it: 'Menu laterale', en: 'Side menu', es: 'Menú lateral' }]],
+    items: [
+      { t: { it: 'Azioni rapide', en: 'Quick actions', es: 'Acciones rápidas' },
+        d: { it: 'Quattro scorciatoie personalizzabili verso le sezioni che usi di più (Timer, Workout, Esercizi, Massimali…).', en: 'Four customizable shortcuts to the sections you use most (Timers, Workout, Exercises, Max lifts…).', es: 'Cuatro accesos directos personalizables a las secciones que más usas (Timers, Workout, Ejercicios, Máximos…).' } },
+      { t: { it: 'Lingua e terminologia', en: 'Language and terminology', es: 'Idioma y terminología' },
+        d: { it: 'Italiano, inglese e spagnolo. I nomi ufficiali del cross training (Thruster, Muscle-Up, For Time…) restano in inglese in tutte le lingue, come in palestra.', en: 'Italian, English and Spanish. Official cross-training names (Thruster, Muscle-Up, For Time…) stay in English in every language, as in the box.', es: 'Italiano, inglés y español. Los nombres oficiales del cross training (Thruster, Muscle-Up, For Time…) se mantienen en inglés en todos los idiomas, como en el box.' } },
+      { t: { it: 'Unità e tema', en: 'Units and theme', es: 'Unidades y tema' },
+        d: { it: 'Sistema metrico (kg, km, m, cm) o imperiale (lb, mi, yd, ft, in) applicato ovunque. Tema scuro, chiaro o automatico: i timer restano sempre scuri per leggerli bene.', en: 'Metric (kg, km, m, cm) or imperial (lb, mi, yd, ft, in) everywhere. Dark, light or automatic theme: timers always stay dark so they read well.', es: 'Sistema métrico (kg, km, m, cm) o imperial (lb, mi, yd, ft, in) en toda la app. Tema oscuro, claro o automático: los temporizadores siempre quedan oscuros para leerlos bien.' } },
+      { t: { it: 'Nessun account', en: 'No account', es: 'Sin cuenta' },
+        d: { it: 'L\'app funziona offline e non ha un server: tutti i dati restano sul telefono. Il backup su Google Drive è facoltativo e finisce in uno spazio privato del tuo Drive.', en: 'The app works offline and has no server: all data stays on the phone. Google Drive backup is optional and goes to a private area of your own Drive.', es: 'La app funciona sin conexión y no tiene servidor: todos los datos se quedan en el teléfono. La copia en Google Drive es opcional y va a un espacio privado de tu Drive.' } }
+    ]
+  },
+  {
+    id: 'timers',
+    title: { it: 'Timer', en: 'Timers', es: 'Temporizadores' },
+    intro: {
+      it: 'Otto timer liberi, pronti in un tocco: AMRAP, EMOM, Tabata, Intervals, Intervalli manuali, For Time, Countdown e Count Up. Gli stessi motori fanno girare anche i WOD salvati.',
+      en: 'Eight free timers ready in one tap: AMRAP, EMOM, Tabata, Intervals, Manual intervals, For Time, Countdown and Count Up. The same engines also run your saved WODs.',
+      es: 'Ocho temporizadores libres listos en un toque: AMRAP, EMOM, Tabata, Intervals, Intervalos manuales, For Time, Countdown y Count Up. Los mismos motores ejecutan también tus WOD guardados.'
+    },
+    shots: [['timers', { it: 'Scelta del timer', en: 'Choosing a timer', es: 'Elegir el temporizador' }], ['timer-run', { it: 'Timer in corso', en: 'Timer running', es: 'Temporizador en marcha' }]],
+    items: [
+      { t: { it: 'I formati', en: 'The formats', es: 'Los formatos' },
+        list: {
+          it: ['<b>For Time</b>: cronometro con time cap facoltativo; segni i round e premi WOD TERMINATO quando hai finito.', '<b>AMRAP</b>: più round possibili nel tempo, con conteggio dei round.', '<b>EMOM</b>: ogni minuto (o ogni 2, 3… minuti) per N round.', '<b>Tabata</b>: lavoro e recupero configurabili, 20"/10" per 8 round di default.', '<b>Intervals</b> e <b>Intervalli manuali</b>: sequenze di lavoro e recupero per round, oppure lavoro libero con recupero opzionale.', '<b>Countdown</b> e <b>Count Up</b>: conto alla rovescia o cronometro puro.'],
+          en: ['<b>For Time</b>: stopwatch with an optional time cap; mark rounds and tap WOD DONE when you finish.', '<b>AMRAP</b>: as many rounds as possible in the time, with a round counter.', '<b>EMOM</b>: every minute (or every 2, 3… minutes) for N rounds.', '<b>Tabata</b>: configurable work and rest, 20"/10" for 8 rounds by default.', '<b>Intervals</b> and <b>Manual intervals</b>: work/rest sequences per round, or free work with optional rest.', '<b>Countdown</b> and <b>Count Up</b>: plain countdown or stopwatch.'],
+          es: ['<b>For Time</b>: cronómetro con time cap opcional; marca las rondas y pulsa WOD TERMINADO al acabar.', '<b>AMRAP</b>: máximas rondas posibles en el tiempo, con contador de rondas.', '<b>EMOM</b>: cada minuto (o cada 2, 3… minutos) durante N rondas.', '<b>Tabata</b>: trabajo y descanso configurables, 20"/10" durante 8 rondas por defecto.', '<b>Intervals</b> e <b>Intervalos manuales</b>: secuencias de trabajo y descanso por ronda, o trabajo libre con descanso opcional.', '<b>Countdown</b> y <b>Count Up</b>: cuenta atrás o cronómetro puro.']
+        } },
+      { t: { it: 'Segnali e preparazione', en: 'Cues and preparation', es: 'Señales y preparación' },
+        d: { it: 'Countdown di preparazione (3, 5 o 10 secondi), beep, voce che dice Vai, Work, Rest e fine allenamento, vibrazione e schermo sempre acceso: tutto attivabile da Impostazioni, con i pulsanti di prova.', en: 'Preparation countdown (3, 5 or 10 seconds), beeps, a voice saying Go, Work, Rest and workout over, vibration and keep-screen-on: all switchable in Settings, with test buttons.', es: 'Cuenta atrás de preparación (3, 5 o 10 segundos), pitidos, voz que dice Vamos, Work, Rest y fin del entrenamiento, vibración y pantalla siempre encendida: todo activable en Ajustes, con botones de prueba.' } },
+      { t: { it: 'Durante il WOD', en: 'During the WOD', es: 'Durante el WOD' },
+        d: { it: 'Pausa e ripresa, round segnati con un tocco, ANNULLA WOD se vuoi uscire senza salvare. Il timer sopravvive anche se lo schermo si spegne o cambi app.', en: 'Pause and resume, rounds marked with one tap, CANCEL WOD to leave without saving. The timer survives the screen turning off or switching apps.', es: 'Pausa y reanudación, rondas marcadas con un toque, CANCELAR WOD para salir sin guardar. El temporizador sigue aunque se apague la pantalla o cambies de app.' } },
+      { t: { it: 'Salva il risultato', en: 'Save the result', es: 'Guarda el resultado' },
+        d: { it: 'A fine timer l\'app propone di salvare la sessione in History Pro con nome del WOD, RX o Scaled, RPE, livello e note.', en: 'When the timer ends the app offers to save the session to History Pro with WOD name, RX or Scaled, RPE, level and notes.', es: 'Al terminar el temporizador la app propone guardar la sesión en History Pro con nombre del WOD, RX o Scaled, RPE, nivel y notas.' } }
+    ]
+  },
+  {
+    id: 'wod',
+    title: { it: 'Workout ed editor a intervalli', en: 'Workouts and the interval editor', es: 'Workouts y editor por intervalos' },
+    intro: {
+      it: 'La libreria contiene i tuoi WOD e quelli del box. L\'editor costruisce qualunque lezione: un WOD è una sequenza di intervalli, ognuno col suo formato e i suoi esercizi.',
+      en: 'The library holds your WODs and your box\'s. The editor builds any class: a WOD is a sequence of intervals, each with its own format and exercises.',
+      es: 'La biblioteca contiene tus WOD y los de tu box. El editor construye cualquier clase: un WOD es una secuencia de intervalos, cada uno con su formato y sus ejercicios.'
+    },
+    shots: [['wod-library', { it: 'Libreria Workout', en: 'Workout library', es: 'Biblioteca Workout' }], ['wod-detail', { it: 'Un WOD in due parti', en: 'A two-part WOD', es: 'Un WOD en dos partes' }], ['wod-editor', { it: 'Editor a intervalli', en: 'Interval editor', es: 'Editor por intervalos' }]],
+    items: [
+      { t: { it: 'Intervalli', en: 'Intervals', es: 'Intervalos' },
+        d: { it: 'Ogni intervallo è un For Time, AMRAP, EMOM o Countdown con i suoi esercizi (ripetizioni, calorie, metri, tempo, carico, note). Si aprono con un tocco, si riordinano trascinandoli e gli esercizi si spostano da un intervallo all\'altro.', en: 'Each interval is a For Time, AMRAP, EMOM or Countdown with its own exercises (reps, calories, meters, time, load, notes). Tap to open, drag to reorder, and drag exercises from one interval to another.', es: 'Cada intervalo es un For Time, AMRAP, EMOM o Countdown con sus ejercicios (repeticiones, calorías, metros, tiempo, carga, notas). Se abren con un toque, se reordenan arrastrando y los ejercicios se mueven de un intervalo a otro.' } },
+      { t: { it: 'Tipo generale e time cap', en: 'General type and time cap', es: 'Tipo general y time cap' },
+        d: { it: 'In cima all\'editor scegli il formato generale del WOD: gli intervalli lasciati su "Generale" lo condividono, cap compreso. Ogni intervallo For Time mostra <b style="color:var(--orange)">TC generale</b> quando usa il cap comune o <b style="color:var(--red)">TC specifico</b> quando ha il suo. Il cap generale parte dal primo intervallo che lo segue: un EMOM di tecnica prima del metcon non lo consuma.', en: 'At the top of the editor pick the WOD\'s general format: intervals left on "General" share it, cap included. Each For Time interval shows <b style="color:var(--orange)">General TC</b> when it uses the shared cap or <b style="color:var(--red)">Own TC</b> when it has its own. The general cap starts with the first interval that follows it: a technique EMOM before the metcon doesn\'t use it up.', es: 'Arriba en el editor eliges el formato general del WOD: los intervalos que quedan en "General" lo comparten, cap incluido. Cada intervalo For Time muestra <b style="color:var(--orange)">TC general</b> cuando usa el cap común o <b style="color:var(--red)">TC específico</b> cuando tiene el suyo. El cap general empieza con el primer intervalo que lo sigue: un EMOM de técnica antes del metcon no lo consume.' } },
+      { t: { it: 'Riposo', en: 'Rest', es: 'Descanso' },
+        d: { it: '"+ Riposo" aggiunge una scheda blu di recupero tra due intervalli, che il timer esegue come un conto alla rovescia.', en: '"+ Rest" adds a blue rest card between two intervals, run by the timer as a countdown.', es: '"+ Descanso" añade una tarjeta azul de recuperación entre dos intervalos, que el temporizador ejecuta como una cuenta atrás.' } },
+      { t: { it: 'Parti: attendi il tocco per iniziare', en: 'Parts: wait for a tap to start', es: 'Partes: esperar un toque para empezar' },
+        d: { it: 'Una lezione con forza o skill e poi il metcon si divide in parti: l\'intervallo con "Attendi il tocco per iniziare" apre la PARTE 2, il timer si ferma e riparte quando tocchi. L\'attesa non conta nel tempo del WOD e ogni parte ha il suo tempo nella sessione.', en: 'A class with strength or skill and then the metcon splits into parts: the interval with "Wait for tap to start" opens PART 2, the timer stops and restarts when you tap. The wait doesn\'t count as WOD time and each part gets its own time in the session.', es: 'Una clase con fuerza o skill y luego el metcon se divide en partes: el intervalo con "Esperar un toque para empezar" abre la PARTE 2, el temporizador se detiene y vuelve a arrancar cuando tocas. La espera no cuenta en el tiempo del WOD y cada parte tiene su tiempo en la sesión.' } },
+      { t: { it: 'EMOM a rotazione e AMRAP nel tempo residuo', en: 'Rotating EMOM and AMRAP in the remaining time', es: 'EMOM rotativo y AMRAP en el tiempo restante' },
+        d: { it: 'Un EMOM può alternare un esercizio diverso ogni minuto. Un AMRAP può durare "il tempo che resta" del time cap generale, come nei WOD "finisci il buy-in, poi AMRAP fino a 20\'".', en: 'An EMOM can rotate a different exercise every minute. An AMRAP can last "whatever is left" of the general time cap, as in "finish the buy-in, then AMRAP until 20\'" WODs.', es: 'Un EMOM puede alternar un ejercicio distinto cada minuto. Un AMRAP puede durar "el tiempo que queda" del time cap general, como en los WOD "termina el buy-in y luego AMRAP hasta 20\'".' } },
+      { t: { it: 'Scheda dell\'esercizio', en: 'Exercise card', es: 'Ficha del ejercicio' },
+        d: { it: 'Tieni premuto un esercizio in un WOD o in una sessione per aprirne descrizione, esecuzione e standard.', en: 'Long-press an exercise in a WOD or session to open its description, execution and standard.', es: 'Mantén pulsado un ejercicio en un WOD o una sesión para abrir su descripción, ejecución y estándar.' } }
+    ]
+  },
+  {
+    id: 'build',
+    title: { it: 'Creare un WOD a mano, passo passo', en: 'Building a WOD by hand, step by step', es: 'Crear un WOD a mano, paso a paso' },
+    intro: {
+      it: 'Esempio reale: <b>EMOM 10\' di Hover Squat Snatch</b>, poi <b>For Time 21-15-9 / 15-12-9 / 12-9-6</b> di Power Snatch, HSPU e Toes-to-Bar con <b>1\' di recupero</b> tra una scala e l\'altra e <b>time cap 20\'</b> sulla parte For Time.',
+      en: 'A real example: <b>EMOM 10\' of Hover Squat Snatch</b>, then <b>For Time 21-15-9 / 15-12-9 / 12-9-6</b> of Power Snatch, HSPU and Toes-to-Bar with <b>1\' rest</b> between ladders and a <b>20\' time cap</b> on the For Time part.',
+      es: 'Un ejemplo real: <b>EMOM 10\' de Hover Squat Snatch</b>, luego <b>For Time 21-15-9 / 15-12-9 / 12-9-6</b> de Power Snatch, HSPU y Toes-to-Bar con <b>1\' de descanso</b> entre escaleras y <b>time cap de 20\'</b> en la parte For Time.'
+    },
+    shots: [['wod-editor-add', { it: '+ Intervallo, + Riposo, + Esercizio', en: '+ Interval, + Rest, + Exercise', es: '+ Intervalo, + Descanso, + Ejercicio' }], ['wod-interval-settings', { it: 'Impostazioni di un intervallo', en: 'Interval settings', es: 'Ajustes de un intervalo' }]],
+    steps: {
+      it: [
+        '<b>Apri l\'editor.</b> Workout → <b>CREA NUOVO WOD</b>. Dai un nome e, se vuoi, un tag (HERO, GIRL, ENGINE…).',
+        '<b>Tipo generale e time cap.</b> In cima scegli <b>TIPO: FOR TIME</b>, attiva <b>TIME CAP</b> e scrivi <b>20</b>. È il formato che condividono tutti gli intervalli lasciati su "Generale": sulla loro riga comparirà <b style="color:var(--orange)">TC generale 20 min</b>.',
+        '<b>Il primo intervallo (EMOM).</b> Tocca <b>+ Intervallo</b> e aprilo. Nel menu del tipo sostituisci "Generale" con <b>EMOM</b>, imposta <b>10 round</b> (e ogni quanti secondi, se non è ogni minuto). Un intervallo con tipo proprio non usa il cap generale: se è un For Time può avere un <b style="color:var(--red)">TC specifico</b>.',
+        '<b>Gli esercizi.</b> Tocca <b>+ Esercizio</b>: nasce una riga libera in fondo. Cerca il movimento nel catalogo (vanno bene anche le sigle: TTB, HSPU, BMU…), scegli ripetizioni, calorie, metri o tempo, il carico e una nota ("Speed"). Poi <b>trascinalo dentro l\'intervallo</b>. Con ⋮ lo sposti, lo duplichi o lo mandi in un altro intervallo.',
+        '<b>La parte For Time.</b> Aggiungi un secondo intervallo e lascialo su <b>Generale (FOR TIME)</b>: eredita da solo il TC di 20\'. Mettici Power Snatch 21 @40 kg, HSPU 15, TTB 9.',
+        '<b>Attendi il tocco tra le parti.</b> Apri l\'intervallo 2 e attiva <b>Attendi il tocco per iniziare</b>: sopra compare il separatore <b>PARTE 2</b>. Finito l\'EMOM il timer si ferma e riparte solo quando tocchi Inizia; l\'attesa non conta nel tempo del WOD e il cap di 20\' parte da qui, non dall\'inizio dell\'EMOM.',
+        '<b>Il recupero tra i blocchi.</b> Tocca <b>+ Riposo</b>: arriva una scheda <b style="color:var(--blue)">blu</b> da 1 minuto (puoi cambiarla). Trascinala dopo l\'intervallo 2. Il recupero fa parte del tempo: conta nei 20\' di cap.',
+        '<b>Le altre scale.</b> Dal ⋮ dell\'intervallo 2 scegli <b>Duplica</b>, cambia le ripetizioni in 15-12-9 e <b>spegni</b> "Attendi il tocco" (deve partire da solo dopo il recupero). Aggiungi un altro Riposo e un terzo intervallo 12-9-6.',
+        '<b>Controlla e salva.</b> Tieni premuto e trascina per riordinare intervalli ed esercizi. <b>SALVA WORKOUT</b> ti avvisa se un intervallo è vuoto, se un esercizio è rimasto fuori o se un nome non è nel catalogo.',
+        '<b>Allenati.</b> Dal dettaglio del WOD premi <b>AVVIA WOD</b>: il timer passa da un intervallo all\'altro, si ferma sulla PARTE 2 e a fine WOD ti propone di salvare la sessione con il tempo di ogni parte.'
+      ],
+      en: [
+        '<b>Open the editor.</b> Workout → <b>CREATE NEW WOD</b>. Give it a name and, if you like, a tag (HERO, GIRL, ENGINE…).',
+        '<b>General type and time cap.</b> At the top pick <b>TYPE: FOR TIME</b>, turn on <b>TIME CAP</b> and enter <b>20</b>. Every interval left on "General" shares this format: its row will show <b style="color:var(--orange)">General TC 20 min</b>.',
+        '<b>The first interval (EMOM).</b> Tap <b>+ Interval</b> and open it. In the type menu replace "General" with <b>EMOM</b> and set <b>10 rounds</b> (and every how many seconds, if not every minute). An interval with its own type doesn\'t use the general cap: a For Time one can have an <b style="color:var(--red)">Own TC</b>.',
+        '<b>The exercises.</b> Tap <b>+ Exercise</b>: a loose row appears at the bottom. Search the movement in the catalog (board shorthand works too: TTB, HSPU, BMU…), set reps, calories, meters or time, the load and a note ("Speed"). Then <b>drag it into the interval</b>. With ⋮ you move it, duplicate it or send it to another interval.',
+        '<b>The For Time part.</b> Add a second interval and leave it on <b>General (FOR TIME)</b>: it inherits the 20\' cap by itself. Add Power Snatch 21 @40 kg, HSPU 15, TTB 9.',
+        '<b>Wait for a tap between parts.</b> Open interval 2 and turn on <b>Wait for tap to start</b>: the <b>PART 2</b> divider appears above it. After the EMOM the timer stops and restarts only when you tap Start; the wait doesn\'t count as WOD time and the 20\' cap starts here, not at the start of the EMOM.',
+        '<b>Rest between blocks.</b> Tap <b>+ Rest</b>: a <b style="color:var(--blue)">blue</b> 1-minute card appears (you can change it). Drag it after interval 2. Rest is part of the time: it counts toward the 20\' cap.',
+        '<b>The other ladders.</b> From interval 2\'s ⋮ choose <b>Duplicate</b>, change the reps to 15-12-9 and <b>turn off</b> "Wait for tap" (it must start on its own after the rest). Add another Rest and a third interval 12-9-6.',
+        '<b>Check and save.</b> Long-press and drag to reorder intervals and exercises. <b>SAVE WORKOUT</b> warns you if an interval is empty, an exercise was left outside or a name isn\'t in the catalog.',
+        '<b>Train.</b> From the WOD detail tap <b>START WOD</b>: the timer moves from interval to interval, stops at PART 2 and at the end offers to save the session with the time of each part.'
+      ],
+      es: [
+        '<b>Abre el editor.</b> Workout → <b>CREAR NUEVO WOD</b>. Ponle un nombre y, si quieres, una etiqueta (HERO, GIRL, ENGINE…).',
+        '<b>Tipo general y time cap.</b> Arriba elige <b>TIPO: FOR TIME</b>, activa <b>TIME CAP</b> y escribe <b>20</b>. Es el formato que comparten todos los intervalos que queden en "General": en su fila aparecerá <b style="color:var(--orange)">TC general 20 min</b>.',
+        '<b>El primer intervalo (EMOM).</b> Toca <b>+ Intervalo</b> y ábrelo. En el menú del tipo cambia "General" por <b>EMOM</b> y pon <b>10 rondas</b> (y cada cuántos segundos, si no es cada minuto). Un intervalo con tipo propio no usa el cap general: si es un For Time puede tener un <b style="color:var(--red)">TC específico</b>.',
+        '<b>Los ejercicios.</b> Toca <b>+ Ejercicio</b>: aparece una fila suelta al final. Busca el movimiento en el catálogo (también valen las siglas: TTB, HSPU, BMU…), elige repeticiones, calorías, metros o tiempo, la carga y una nota ("Speed"). Luego <b>arrástralo dentro del intervalo</b>. Con ⋮ lo mueves, lo duplicas o lo mandas a otro intervalo.',
+        '<b>La parte For Time.</b> Añade un segundo intervalo y déjalo en <b>General (FOR TIME)</b>: hereda solo el cap de 20\'. Pon Power Snatch 21 @40 kg, HSPU 15, TTB 9.',
+        '<b>Esperar un toque entre partes.</b> Abre el intervalo 2 y activa <b>Esperar un toque para empezar</b>: encima aparece el separador <b>PARTE 2</b>. Al acabar el EMOM el temporizador se detiene y solo vuelve a arrancar cuando tocas Empezar; la espera no cuenta en el tiempo del WOD y el cap de 20\' empieza aquí, no al inicio del EMOM.',
+        '<b>El descanso entre bloques.</b> Toca <b>+ Descanso</b>: aparece una tarjeta <b style="color:var(--blue)">azul</b> de 1 minuto (puedes cambiarla). Arrástrala después del intervalo 2. El descanso forma parte del tiempo: cuenta en los 20\' de cap.',
+        '<b>Las otras escaleras.</b> Desde el ⋮ del intervalo 2 elige <b>Duplicar</b>, cambia las repeticiones a 15-12-9 y <b>desactiva</b> "Esperar un toque" (debe arrancar solo tras el descanso). Añade otro Descanso y un tercer intervalo 12-9-6.',
+        '<b>Revisa y guarda.</b> Mantén pulsado y arrastra para reordenar intervalos y ejercicios. <b>GUARDAR WORKOUT</b> te avisa si un intervalo está vacío, si un ejercicio quedó fuera o si un nombre no está en el catálogo.',
+        '<b>Entrena.</b> Desde el detalle del WOD pulsa <b>INICIAR WOD</b>: el temporizador pasa de un intervalo a otro, se detiene en la PARTE 2 y al final te propone guardar la sesión con el tiempo de cada parte.'
+      ]
+    },
+    items: [],
+    tip: {
+      it: 'Più veloce: fotografa la lavagna con <b>Da lavagna</b>. Lo stesso WOD esce già così, con parti, recuperi e time cap; tu controlli e salvi.',
+      en: 'Faster: photograph the board with <b>From board</b>. The same WOD comes out like this already, with parts, rests and time cap; you just check and save.',
+      es: 'Más rápido: fotografía la pizarra con <b>Desde pizarra</b>. El mismo WOD sale ya así, con partes, descansos y time cap; tú revisas y guardas.'
+    }
+  },
+  {
+    id: 'scan',
+    title: { it: 'Scansione della lavagna', en: 'Whiteboard scanning', es: 'Escaneo de la pizarra' },
+    intro: {
+      it: 'Fotografa la lavagna del box, o scegli uno screenshot della story del box dalla galleria: il WOD viene scritto per te e lo controlli prima di salvare. Funziona tutto sul telefono, senza internet.',
+      en: 'Take a photo of the box whiteboard, or pick a screenshot of your box\'s story from the gallery: the WOD is written for you and you check it before saving. Everything runs on the phone, offline.',
+      es: 'Fotografía la pizarra del box, o elige una captura de la story del box en la galería: el WOD se escribe solo y lo revisas antes de guardar. Todo funciona en el teléfono, sin internet.'
+    },
+    shots: [['scan', { it: 'Scansiona lavagna', en: 'Scan the board', es: 'Escanear la pizarra' }]],
+    items: [
+      { t: { it: 'Cosa riconosce', en: 'What it reads', es: 'Qué reconoce' },
+        list: {
+          it: ['Formati: For Time, AMRAP, EMOM ed E2MOM, "Every 2 min x 5", Tabata, round, time cap, lavoro/recupero.', 'Scale di ripetizioni: "21-15-9" alla Fran, oppure più scale di fila ("21-15-9 / 15-12-9 / 12-9-6") con un numero per esercizio.', 'REST tra le parti, che diventano schede blu di recupero.', 'Parti separate (A/B, Strength, Metcon, forza prima del WOD), con l\'attesa del tocco solo quando serve.', 'Abbreviazioni da lavagna: TTB, HSPU, C2B, DU, KBS, WB, P.Snatch, H.S.Clean…', 'Carichi "@50/35" e calorie "50/40 cal": il valore giusto per te in base al sesso del profilo e alle unità scelte.'],
+          en: ['Formats: For Time, AMRAP, EMOM and E2MOM, "Every 2 min x 5", Tabata, rounds, time cap, work/rest.', 'Rep schemes: Fran-style "21-15-9", or several in a row ("21-15-9 / 15-12-9 / 12-9-6") with one number per exercise.', 'REST between parts, turned into blue rest cards.', 'Separate parts (A/B, Strength, Metcon, lifting before the WOD), waiting for a tap only when needed.', 'Board shorthand: TTB, HSPU, C2B, DU, KBS, WB, P.Snatch, H.S.Clean…', 'Loads "@50/35" and calories "50/40 cal": the right value for you from your profile and units.'],
+          es: ['Formatos: For Time, AMRAP, EMOM y E2MOM, "Every 2 min x 5", Tabata, rondas, time cap, trabajo/descanso.', 'Escaleras de repeticiones: "21-15-9" tipo Fran, o varias seguidas ("21-15-9 / 15-12-9 / 12-9-6") con un número por ejercicio.', 'REST entre partes, que se convierten en tarjetas azules de descanso.', 'Partes separadas (A/B, Strength, Metcon, fuerza antes del WOD), esperando un toque solo cuando hace falta.', 'Abreviaturas de pizarra: TTB, HSPU, C2B, DU, KBS, WB, P.Snatch, H.S.Clean…', 'Cargas "@50/35" y calorías "50/40 cal": el valor adecuado para ti según tu perfil y tus unidades.']
+        } }
+    ],
+    tip: {
+      it: 'Gli esercizi non riconosciuti vengono segnalati: correggili nell\'editor prima di salvare. La scansione non salva mai niente da sola.',
+      en: 'Unrecognized exercises are flagged: fix them in the editor before saving. Scanning never saves anything on its own.',
+      es: 'Los ejercicios no reconocidos se señalan: corrígelos en el editor antes de guardar. El escaneo nunca guarda nada por sí solo.'
+    }
+  },
+  {
+    id: 'smart',
+    title: { it: 'Smart WOD', en: 'Smart WOD', es: 'Smart WOD' },
+    intro: {
+      it: 'Un WOD su misura in un tocco, costruito sull\'attrezzatura, il livello e le skill del tuo profilo atleta.',
+      en: 'A tailor-made WOD in one tap, built on the equipment, level and skills of your athlete profile.',
+      es: 'Un WOD a medida en un toque, construido con el material, el nivel y las skills de tu perfil de atleta.'
+    },
+    shots: [['smart', { it: 'Smart WOD Builder', en: 'Smart WOD Builder', es: 'Smart WOD Builder' }]],
+    items: [
+      { t: { it: 'Obiettivi', en: 'Goals', es: 'Objetivos' },
+        d: { it: 'Resistenza, Misto, Forza, Ginnastica, Pesistica, Core e Corsa + Stazioni. Il Misto può uscire in più parti, fino a 60 minuti.', en: 'Endurance, Mixed, Strength, Gymnastics, Weightlifting, Core and Run + Stations. Mixed can come out in several parts, up to 60 minutes.', es: 'Resistencia, Mixto, Fuerza, Gimnasia, Halterofilia, Core y Carrera + Estaciones. El Mixto puede salir en varias partes, hasta 60 minutos.' } },
+      { t: { it: 'Formato e durata', en: 'Format and length', es: 'Formato y duración' },
+        d: { it: 'Formato automatico o scelto da te (AMRAP, EMOM, For Time…) e durata della sessione.', en: 'Automatic format or your choice (AMRAP, EMOM, For Time…) and session length.', es: 'Formato automático o elegido por ti (AMRAP, EMOM, For Time…) y duración de la sesión.' } },
+      { t: { it: 'Dal profilo atleta', en: 'From your athlete profile', es: 'Desde tu perfil de atleta' },
+        d: { it: 'Usa solo gli attrezzi che hai, rispetta il tuo livello e, se vuoi, solo le skill che hai già acquisito (muscle-up, HSPU…). Il WOD generato si apre nell\'editor per ritoccarlo.', en: 'Uses only the equipment you have, respects your level and, if you want, only skills you already have (muscle-up, HSPU…). The generated WOD opens in the editor for tweaks.', es: 'Usa solo el material que tienes, respeta tu nivel y, si quieres, solo las skills que ya dominas (muscle-up, HSPU…). El WOD generado se abre en el editor para retocarlo.' } }
+    ]
+  },
+  {
+    id: 'benchmarks',
+    title: { it: 'Benchmark', en: 'Benchmarks', es: 'Benchmarks' },
+    intro: {
+      it: 'I WOD di riferimento per misurare i progressi, divisi nelle collezioni Girls, Hero, Open e Custom. Nella libreria Workout trovi in più 244 WOD standard (Girls e Hero) pronti da avviare.',
+      en: 'Reference WODs to measure progress, split into the Girls, Hero, Open and Custom collections. The Workout library also holds 244 standard WODs (Girls and Heroes) ready to run.',
+      es: 'Los WOD de referencia para medir el progreso, divididos en las colecciones Girls, Hero, Open y Custom. En la biblioteca Workout tienes además 244 WOD estándar (Girls y Hero) listos para empezar.'
+    },
+    shots: [['benchmarks', { it: 'Benchmark hub', en: 'Benchmark hub', es: 'Benchmark hub' }], ['benchmarks-catalog', { it: 'Catalogo', en: 'Catalog', es: 'Catálogo' }]],
+    items: [
+      { t: { it: 'Collezioni e tentativi', en: 'Collections and attempts', es: 'Colecciones e intentos' },
+        d: { it: 'Filtri Tutti / Completati / Da fare, percentuale di catalogo completata, storico dei tentativi e record personale di ogni benchmark. Le sessioni avviate da un benchmark aggiornano tutto da sole.', en: 'All / Completed / To do filters, catalog completion percentage, attempt history and personal record for every benchmark. Sessions started from a benchmark update everything automatically.', es: 'Filtros Todos / Completados / Pendientes, porcentaje del catálogo completado, historial de intentos y récord personal de cada benchmark. Las sesiones iniciadas desde un benchmark lo actualizan todo solas.' } },
+      { t: { it: 'Benchmark personalizzati', en: 'Custom benchmarks', es: 'Benchmarks personalizados' },
+        d: { it: 'Trasforma il WOD storico del tuo box in un benchmark da ripetere e confrontare nel tempo, e condividi i risultati.', en: 'Turn your box\'s classic WOD into a benchmark to repeat and compare over time, and share the results.', es: 'Convierte el WOD clásico de tu box en un benchmark para repetir y comparar en el tiempo, y comparte los resultados.' } }
+    ]
+  },
+  {
+    id: 'exercises',
+    title: { it: 'Esercizi', en: 'Exercises', es: 'Ejercicios' },
+    intro: {
+      it: 'Un catalogo di circa 580 esercizi del cross training, con descrizione, esecuzione, standard e muscoli coinvolti in italiano, inglese e spagnolo.',
+      en: 'A catalog of about 580 cross-training exercises, with description, execution, standard and muscles worked in Italian, English and Spanish.',
+      es: 'Un catálogo de unos 580 ejercicios de cross training, con descripción, ejecución, estándar y músculos implicados en italiano, inglés y español.'
+    },
+    shots: [['exercise', { it: 'Scheda esercizio', en: 'Exercise card', es: 'Ficha de ejercicio' }]],
+    items: [
+      { t: { it: 'Mappa muscolare', en: 'Muscle map', es: 'Mapa muscular' },
+        d: { it: 'Fronte e retro del corpo con i muscoli principali e secondari evidenziati.', en: 'Front and back of the body with primary and secondary muscles highlighted.', es: 'Frente y espalda del cuerpo con los músculos principales y secundarios resaltados.' } },
+      { t: { it: 'Ricerca intelligente', en: 'Smart search', es: 'Búsqueda inteligente' },
+        d: { it: 'Trova gli esercizi anche per alias e sigle da lavagna (BMU, T2B, KBS…), con filtri per tipo, categoria, attrezzatura e difficoltà, e i preferiti in cima.', en: 'Finds exercises by alias and board shorthand too (BMU, T2B, KBS…), with type, category, equipment and difficulty filters, and favorites first.', es: 'Encuentra ejercicios también por alias y siglas de pizarra (BMU, T2B, KBS…), con filtros por tipo, categoría, material y dificultad, y los favoritos primero.' } },
+      { t: { it: 'Esercizi tuoi', en: 'Your own exercises', es: 'Tus propios ejercicios' },
+        d: { it: 'Aggiungi esercizi personalizzati. Quelli standard si possono modificare solo attivando l\'opzione apposita in Impostazioni.', en: 'Add custom exercises. Standard ones can be edited only after turning on the dedicated option in Settings.', es: 'Añade ejercicios personalizados. Los estándar solo se pueden editar activando la opción correspondiente en Ajustes.' } }
+    ]
+  },
+  {
+    id: 'maxlifts',
+    title: { it: 'Massimali', en: 'Max lifts', es: 'Máximos' },
+    intro: {
+      it: 'Registra 1RM e massimali su più ripetizioni, segui i progressi e calcola le percentuali per i tuoi carichi.',
+      en: 'Log 1RMs and multi-rep maxes, follow your progress and work out percentages for your loads.',
+      es: 'Registra 1RM y máximos a varias repeticiones, sigue tu progreso y calcula los porcentajes de tus cargas.'
+    },
+    shots: [['maxlifts', { it: 'Massimali', en: 'Max lifts', es: 'Máximos' }], ['maxlift-detail', { it: 'Percentuali', en: 'Percentages', es: 'Porcentajes' }]],
+    items: [
+      { t: { it: '1RM stimato', en: 'Estimated 1RM', es: '1RM estimado' },
+        d: { it: 'Da un 3RM o 5RM l\'app stima l\'1RM con la formula che preferisci: Brzycki, Epley, Lombardi, Mayhew o O\'Conner. Un 1RM vero resta sempre il riferimento.', en: 'From a 3RM or 5RM the app estimates your 1RM with the formula you prefer: Brzycki, Epley, Lombardi, Mayhew or O\'Conner. A real 1RM always stays the reference.', es: 'A partir de un 3RM o 5RM la app estima el 1RM con la fórmula que prefieras: Brzycki, Epley, Lombardi, Mayhew u O\'Conner. Un 1RM real sigue siendo siempre la referencia.' } },
+      { t: { it: 'Percentuali e storico', en: 'Percentages and history', es: 'Porcentajes e historial' },
+        d: { it: 'Tabella delle percentuali del tuo massimale, grafico del progresso, ultimo PR e storico di ogni alzata.', en: 'Percentage table of your max, progress chart, latest PR and history for every lift.', es: 'Tabla de porcentajes de tu máximo, gráfico de progreso, último PR e historial de cada levantamiento.' } }
+    ]
+  },
+  {
+    id: 'history',
+    title: { it: 'History Pro', en: 'History Pro', es: 'History Pro' },
+    intro: {
+      it: 'Tutte le sessioni salvate, con ricerca e filtri, e il dettaglio completo di ogni allenamento.',
+      en: 'Every saved session, with search and filters, and the full detail of each workout.',
+      es: 'Todas las sesiones guardadas, con búsqueda y filtros, y el detalle completo de cada entrenamiento.'
+    },
+    shots: [['history', { it: 'Cronologia', en: 'History', es: 'Historial' }], ['session', { it: 'Dettaglio sessione', en: 'Session detail', es: 'Detalle de sesión' }], ['session-3', { it: 'Muscoli coinvolti', en: 'Muscles worked', es: 'Músculos implicados' }]],
+    items: [
+      { t: { it: 'Dettaglio sessione', en: 'Session detail', es: 'Detalle de sesión' },
+        d: { it: 'Struttura del WOD, tempo di ogni parte, punteggio, round, RX o Scaled, RPE, note, carichi usati e frequenza cardiaca con le zone.', en: 'WOD structure, time of each part, score, rounds, RX or Scaled, RPE, notes, loads used and heart rate with zones.', es: 'Estructura del WOD, tiempo de cada parte, puntuación, rondas, RX o Scaled, RPE, notas, cargas usadas y frecuencia cardiaca con zonas.' } },
+      { t: { it: 'Inserimento manuale', en: 'Manual entry', es: 'Entrada manual' },
+        d: { it: 'Hai fatto il WOD senza il telefono? Inseriscilo dopo, con data, ora, durata, time cap e la struttura costruita con lo stesso editor dei WOD.', en: 'Did the WOD without your phone? Add it afterwards, with date, time, duration, time cap and the structure built with the same WOD editor.', es: '¿Hiciste el WOD sin el teléfono? Añádelo después, con fecha, hora, duración, time cap y la estructura hecha con el mismo editor de WOD.' } },
+      { t: { it: 'Condivisione', en: 'Sharing', es: 'Compartir' },
+        d: { it: 'Condividi una sessione o un elenco filtrato di risultati.', en: 'Share a session or a filtered list of results.', es: 'Comparte una sesión o una lista filtrada de resultados.' } }
+    ]
+  },
+  {
+    id: 'analytics',
+    title: { it: 'Analytics e Progress Intelligence', en: 'Analytics and Progress Intelligence', es: 'Analytics y Progress Intelligence' },
+    intro: {
+      it: 'I tuoi numeri nel tempo: frequenza, volume, muscoli allenati, record, cardio e crescita stimata.',
+      en: 'Your numbers over time: frequency, volume, muscles trained, records, cardio and estimated growth.',
+      es: 'Tus números en el tiempo: frecuencia, volumen, músculos trabajados, récords, cardio y crecimiento estimado.'
+    },
+    shots: [['analytics', { it: 'Analytics', en: 'Analytics', es: 'Analytics' }], ['analytics-muscles', { it: 'Gruppi muscolari', en: 'Muscle groups', es: 'Grupos musculares' }], ['progress', { it: 'Progress Intelligence', en: 'Progress Intelligence', es: 'Progress Intelligence' }]],
+    items: [
+      { t: { it: 'Analytics', en: 'Analytics', es: 'Analytics' },
+        d: { it: 'Schede Panoramica, Muscoli, Carico, Workout e Record: streak, durata media, RPE medio, mese più attivo, gruppi muscolari trascurati, tempo nelle zone cardio.', en: 'Overview, Muscles, Load, Workouts and Records tabs: streaks, average duration, average RPE, busiest month, neglected muscle groups, time in heart-rate zones.', es: 'Pestañas Resumen, Músculos, Carga, Workouts y Récords: rachas, duración media, RPE medio, mes más activo, grupos musculares olvidados, tiempo en zonas cardiacas.' } },
+      { t: { it: 'Progress Intelligence', en: 'Progress Intelligence', es: 'Progress Intelligence' },
+        d: { it: 'Esercizi, benchmark e massimali a confronto: e1RM, frequenza settimanale, PR recenti e crescita stimata di ogni movimento.', en: 'Exercises, benchmarks and max lifts compared: e1RM, weekly frequency, recent PRs and estimated growth of every movement.', es: 'Ejercicios, benchmarks y máximos comparados: e1RM, frecuencia semanal, PR recientes y crecimiento estimado de cada movimiento.' } }
+    ]
+  },
+  {
+    id: 'profile',
+    title: { it: 'Iron Profile', en: 'Iron Profile', es: 'Iron Profile' },
+    intro: {
+      it: 'Il tuo percorso sportivo in un\'unica scheda, con l\'Iron Score e il rank.',
+      en: 'Your athletic journey on a single page, with your Iron Score and rank.',
+      es: 'Tu recorrido deportivo en una sola ficha, con el Iron Score y el rango.'
+    },
+    shots: [['iron-profile', { it: 'Iron Profile', en: 'Iron Profile', es: 'Iron Profile' }]],
+    items: [
+      { t: { it: 'Iron Score', en: 'Iron Score', es: 'Iron Score' },
+        d: { it: 'Indice 0-100 basato su costanza, equilibrio allenante, forza e progressi, motore e cardio, capacità di lavoro. Sale di rank man mano che ti alleni.', en: 'A 0-100 index based on consistency, training balance, strength and progress, engine and cardio, work capacity. Your rank goes up as you train.', es: 'Índice 0-100 basado en constancia, equilibrio del entrenamiento, fuerza y progreso, motor y cardio, capacidad de trabajo. Subes de rango a medida que entrenas.' } },
+      { t: { it: 'DNA e highlights', en: 'DNA and highlights', es: 'ADN y highlights' },
+        d: { it: 'Identità di allenamento, profilo di forza, momentum degli ultimi 30 giorni, la tua settimana e il tuo anno.', en: 'Training identity, strength profile, last-30-days momentum, your week and your year.', es: 'Identidad de entrenamiento, perfil de fuerza, momentum de los últimos 30 días, tu semana y tu año.' } }
+    ]
+  },
+  {
+    id: 'coach',
+    title: { it: 'Iron Coach', en: 'Iron Coach', es: 'Iron Coach' },
+    intro: {
+      it: 'Un coach che legge i tuoi dati reali, senza inventarli: frequenza, carico, recupero e benchmark.',
+      en: 'A coach that reads your real data without making anything up: frequency, load, recovery and benchmarks.',
+      es: 'Un coach que lee tus datos reales, sin inventarlos: frecuencia, carga, recuperación y benchmarks.'
+    },
+    shots: [['coach', { it: 'Iron Coach', en: 'Iron Coach', es: 'Iron Coach' }]],
+    items: [
+      { t: { it: 'Check-in del giorno', en: 'Daily check-in', es: 'Check-in del día' },
+        d: { it: 'Sonno, energia e indolenzimento: il consiglio di oggi si adatta a come ti senti. Il check-in vale per la giornata e si azzera il giorno dopo; può ricordartelo all\'apertura dell\'app.', en: 'Sleep, energy and soreness: today\'s advice adapts to how you feel. The check-in lasts for the day and resets the next; it can remind you when you open the app.', es: 'Sueño, energía y agujetas: el consejo de hoy se adapta a cómo te sientes. El check-in vale para el día y se reinicia al siguiente; puede recordártelo al abrir la app.' } },
+      { t: { it: 'Oggi, Settimana, Analisi', en: 'Today, Week, Analysis', es: 'Hoy, Semana, Análisis' },
+        d: { it: 'La sessione consigliata, il piano della settimana, i trend e i punteggi con l\'affidabilità dei dati su cui si basano.', en: 'The suggested session, the weekly plan, trends and scores with how reliable the underlying data is.', es: 'La sesión recomendada, el plan de la semana, las tendencias y las puntuaciones con la fiabilidad de los datos en que se basan.' } }
+    ],
+    tip: {
+      it: 'Le indicazioni di Iron Coach sono informative: non sostituiscono il coach del box né indicazioni mediche.',
+      en: 'Iron Coach advice is informational: it doesn\'t replace your box coach or medical advice.',
+      es: 'Las indicaciones de Iron Coach son informativas: no sustituyen al coach del box ni a indicaciones médicas.'
+    }
+  },
+  {
+    id: 'achievements',
+    title: { it: 'Achievement', en: 'Achievements', es: 'Logros' },
+    intro: {
+      it: 'Traguardi da sbloccare in nove categorie: Allenamenti, Volume, Costanza, Versatilità, Resistenza, Forza, Intensità, Skill e Benchmark.',
+      en: 'Milestones to unlock in nine categories: Workouts, Volume, Consistency, Versatility, Endurance, Strength, Intensity, Skill and Benchmarks.',
+      es: 'Metas que desbloquear en nueve categorías: Entrenamientos, Volumen, Constancia, Versatilidad, Resistencia, Fuerza, Intensidad, Skill y Benchmarks.'
+    },
+    shots: [['achievements', { it: 'Achievement', en: 'Achievements', es: 'Logros' }]],
+    items: [
+      { t: { it: 'Notifiche', en: 'Notifications', es: 'Notificaciones' },
+        d: { it: 'Un banner nell\'app a ogni sblocco e, se vuoi, anche una notifica di sistema.', en: 'An in-app banner at every unlock and, if you want, a system notification too.', es: 'Un banner en la app en cada desbloqueo y, si quieres, también una notificación del sistema.' } }
+    ]
+  },
+  {
+    id: 'athletes',
+    title: { it: 'Profili atleta e Modalità Coach', en: 'Athlete profiles and Coach mode', es: 'Perfiles de atleta y Modo Coach' },
+    intro: {
+      it: 'Più atleti sullo stesso telefono, ognuno con i suoi dati. E un profilo Coach per far girare i timer alla classe.',
+      en: 'Several athletes on the same phone, each with their own data. And a Coach profile to run timers for a class.',
+      es: 'Varios atletas en el mismo teléfono, cada uno con sus datos. Y un perfil Coach para llevar los temporizadores de la clase.'
+    },
+    shots: [['profiles-list', { it: 'Cambia profilo', en: 'Switch profile', es: 'Cambiar perfil' }]],
+    items: [
+      { t: { it: 'Profilo atleta', en: 'Athlete profile', es: 'Perfil de atleta' },
+        d: { it: 'Foto o avatar, sesso, livello, attrezzatura disponibile, skill acquisite, frequenza cardiaca a riposo, massima e soglia. Storico, massimali e statistiche sono separati per profilo.', en: 'Photo or avatar, sex, level, available equipment, acquired skills, resting, max and threshold heart rate. History, max lifts and stats are kept per profile.', es: 'Foto o avatar, sexo, nivel, material disponible, skills adquiridas, frecuencia cardiaca en reposo, máxima y umbral. Historial, máximos y estadísticas van por perfil.' } },
+      { t: { it: 'Modalità Coach', en: 'Coach mode', es: 'Modo Coach' },
+        d: { it: 'Con il profilo Coach attivo i timer funzionano normalmente ma non salvano sessioni né dati cardio: è pensato per chi guida la lezione.', en: 'With the Coach profile active, timers work normally but save no sessions or heart-rate data: it\'s meant for whoever runs the class.', es: 'Con el perfil Coach activo los temporizadores funcionan normalmente pero no guardan sesiones ni datos cardiacos: está pensado para quien dirige la clase.' } }
+    ]
+  },
+  {
+    id: 'cardio',
+    title: { it: 'Cardio', en: 'Heart rate', es: 'Cardio' },
+    intro: {
+      it: 'Collega una fascia o un sensore Bluetooth Heart Rate standard e vedi i battiti durante il WOD.',
+      en: 'Connect a standard Bluetooth Heart Rate strap or sensor and see your heart rate during the WOD.',
+      es: 'Conecta una banda o sensor Bluetooth Heart Rate estándar y ve tus pulsaciones durante el WOD.'
+    },
+    shots: [['cardio', { it: 'Sensori cardio', en: 'Heart-rate sensors', es: 'Sensores cardio' }], ['session-2', { it: 'Tempo nelle zone', en: 'Time in zones', es: 'Tiempo en zonas' }]],
+    items: [
+      { t: { it: 'Sensore memorizzato', en: 'Remembered sensor', es: 'Sensor memorizado' },
+        d: { it: 'L\'app ricorda l\'ultimo sensore e, se vuoi, lo ricollega da sola all\'avvio.', en: 'The app remembers the last sensor and, if you want, reconnects it automatically at startup.', es: 'La app recuerda el último sensor y, si quieres, lo reconecta sola al iniciar.' } },
+      { t: { it: 'Zone cardio', en: 'Heart-rate zones', es: 'Zonas cardiacas' },
+        d: { it: 'Zone calcolate da FC a riposo e FC massima (metodo Karvonen), tempo in ogni zona per sessione. Se in un WOD superi la tua FC massima, l\'app ti propone di aggiornarla.', en: 'Zones computed from resting and max heart rate (Karvonen method), time in each zone per session. If a WOD takes you past your max, the app offers to update it.', es: 'Zonas calculadas a partir de la FC en reposo y la FC máxima (método Karvonen), tiempo en cada zona por sesión. Si en un WOD superas tu FC máxima, la app te propone actualizarla.' } }
+    ]
+  },
+  {
+    id: 'tv',
+    title: { it: 'Timer sulla TV', en: 'Timer on the TV', es: 'Temporizador en la TV' },
+    intro: {
+      it: 'Porta il timer sullo schermo grande del box: tutta la classe vede tempo, round, intervallo ed esercizi.',
+      en: 'Put the timer on the box\'s big screen: the whole class sees time, round, interval and exercises.',
+      es: 'Lleva el temporizador a la pantalla grande del box: toda la clase ve tiempo, ronda, intervalo y ejercicios.'
+    },
+    shots: [],
+    items: [
+      { t: { it: 'Chromecast', en: 'Chromecast', es: 'Chromecast' },
+        d: { it: 'Tocca TRASMETTI nel timer e scegli la TV o il Chromecast: sulla TV compare il tabellone del timer, il telefono resta libero come telecomando.', en: 'Tap CAST in the timer and pick the TV or Chromecast: the timer board appears on the TV and the phone stays free as a remote.', es: 'Toca TRANSMITIR en el temporizador y elige la TV o el Chromecast: en la TV aparece el marcador del temporizador y el teléfono queda libre como mando.' } },
+      { t: { it: 'HDMI e USB-C', en: 'HDMI and USB-C', es: 'HDMI y USB-C' },
+        d: { it: 'Con un adattatore USB-C/HDMI compatibile lo schermo esterno mostra solo il tabellone del timer, non una copia del telefono.', en: 'With a compatible USB-C/HDMI adapter the external display shows only the timer board, not a mirror of the phone.', es: 'Con un adaptador USB-C/HDMI compatible la pantalla externa muestra solo el marcador del temporizador, no una copia del teléfono.' } }
+    ]
+  },
+  {
+    id: 'data',
+    title: { it: 'Dati, backup ed esportazioni', en: 'Data, backup and exports', es: 'Datos, copias y exportaciones' },
+    intro: {
+      it: 'I tuoi dati sono tuoi: li salvi, li sposti su un altro telefono e li esporti in formati leggibili.',
+      en: 'Your data is yours: back it up, move it to another phone and export it in readable formats.',
+      es: 'Tus datos son tuyos: guárdalos, pásalos a otro teléfono y expórtalos en formatos legibles.'
+    },
+    shots: [['backup', { it: 'Dati e backup', en: 'Data and backup', es: 'Datos y copias' }]],
+    items: [
+      { t: { it: 'Backup e ripristino', en: 'Backup and restore', es: 'Copia y restauración' },
+        d: { it: 'Backup completo su file, con verifica di integrità. Al ripristino scegli SOSTITUISCI per sovrascrivere o UNISCI SICURO per importare solo i record senza conflitti.', en: 'Full backup to a file, with integrity check. When restoring choose REPLACE to overwrite or SAFE MERGE to import only records without conflicts.', es: 'Copia completa a un archivo, con verificación de integridad. Al restaurar elige SUSTITUIR para sobrescribir o UNIR SEGURO para importar solo los registros sin conflictos.' } },
+      { t: { it: 'Google Drive', en: 'Google Drive', es: 'Google Drive' },
+        d: { it: 'Backup cloud facoltativo in uno spazio privato dell\'app sul tuo Drive, non visibile tra i tuoi file e non accessibile allo sviluppatore.', en: 'Optional cloud backup to a private app area on your Drive, not visible among your files and not accessible to the developer.', es: 'Copia en la nube opcional en un espacio privado de la app en tu Drive, no visible entre tus archivos y no accesible para el desarrollador.' } },
+      { t: { it: 'Esportazioni', en: 'Exports', es: 'Exportaciones' },
+        d: { it: 'CSV di History Pro, libreria WOD, catalogo esercizi e massimali; report atleta in testo; oppure un unico ZIP con tutto.', en: 'CSV of History Pro, WOD library, exercise catalog and max lifts; a text athlete report; or a single ZIP with everything.', es: 'CSV de History Pro, biblioteca de WOD, catálogo de ejercicios y máximos; informe del atleta en texto; o un único ZIP con todo.' } }
+    ]
+  }
+];
+
+const IMG_DIR = 'img/';
+let lang = 'it';
+
+function pick(obj) { return obj[lang] ?? obj.it; }
+
+function render() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i]').forEach(el => { el.innerHTML = pick(UI[el.dataset.i]); });
+  document.querySelectorAll('.langs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+
+  document.getElementById('toc').innerHTML = SECTIONS.map((s, i) =>
+    `<a href="#s-${s.id}"><span class="num">${i + 1}</span>${pick(s.title)}</a>`).join('');
+
+  document.getElementById('content').innerHTML = SECTIONS.map((s, i) => {
+    const items = s.items.map(it => `
+      <div class="item"><h3>${pick(it.t)}</h3>
+        ${it.d ? `<p>${pick(it.d)}</p>` : ''}
+        ${it.list ? `<ul>${pick(it.list).map(li => `<li>${li}</li>`).join('')}</ul>` : ''}
+      </div>`).join('');
+    const steps = s.steps ? `<ol class="steps">${pick(s.steps).map(st => `<li>${st}</li>`).join('')}</ol>` : '';
+    const tip = s.tip ? `<div class="tip"><b>${pick(UI.tip)}:</b> ${pick(s.tip)}</div>` : '';
+    const shots = (s.shots || []).map(([file, cap]) => `
+      <figure class="shot"><img src="${IMG_DIR}${file}.webp" alt="${pick(cap)}" loading="lazy" onerror="this.closest('figure').remove()"><figcaption>${pick(cap)}</figcaption></figure>`).join('');
+    return `
+      <section class="s" id="s-${s.id}">
+        <div class="s-head"><span class="num">${i + 1}</span><h2>${pick(s.title)}</h2></div>
+        <p class="intro">${pick(s.intro)}</p>
+        <div class="layout ${shots ? 'with-shots' : ''}">
+          <div>${steps}${items ? `<div class="items">${items}</div>` : ''}${tip}</div>
+          ${shots ? `<div class="shots">${shots}</div>` : ''}
+        </div>
+      </section>`;
+  }).join('');
+}
+
+function setLang(next) {
+  lang = ['it', 'en', 'es'].includes(next) ? next : 'en';
+  try { localStorage.setItem('ironwod-guide-lang', lang); } catch (e) {}
+  const url = new URL(location.href);
+  url.searchParams.set('lang', lang);
+  history.replaceState(null, '', url);
+  render();
+}
+
+(function init() {
+  let stored = null;
+  try { stored = localStorage.getItem('ironwod-guide-lang'); } catch (e) {}
+  const fromUrl = new URLSearchParams(location.search).get('lang');
+  const fromBrowser = (navigator.language || 'it').slice(0, 2);
+  lang = [fromUrl, stored, fromBrowser].find(l => ['it', 'en', 'es'].includes(l)) || 'en';
+  render();
+  if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
+  document.querySelectorAll('.langs button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+
+  const lb = document.getElementById('lb');
+  document.addEventListener('click', e => {
+    if (e.target.matches('figure.shot img')) { lb.querySelector('img').src = e.target.src; lb.classList.add('open'); }
+    else if (e.target.closest('#lb')) lb.classList.remove('open');
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') lb.classList.remove('open'); });
+})();
+</script>
+</body>
+</html>
