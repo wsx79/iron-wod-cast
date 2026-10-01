@@ -1,0 +1,22 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.ironwod.app",
+      "sha256_cert_fingerprints": [
+        "A0:AE:50:C7:5B:FD:CC:8E:7A:C9:91:5C:7E:A9:5C:D7:0E:14:9A:77:15:5D:C8:12:7B:3F:C8:22:AF:E7:CA:AD"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.ironwod.app.debug",
+      "sha256_cert_fingerprints": [
+        "E4:91:3F:E0:B9:57:00:FA:F1:86:03:44:32:15:A9:19:C2:80:88:E8:89:EF:AD:39:B8:66:31:42:A0:E7:69:A7"
+      ]
+    }
+  }
+]
