@@ -4,25 +4,63 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <title>IRON WOD Timer</title>
+  <!--
+    %%VIEWPORT_WIDTH%% is substituted with the display's real physical pixel width before this
+    file is loaded (see TimerWebViewPresentation). Some HDMI/USB-C adapters report a densityDpi
+    to Android that doesn't match their panel; on the affected device this WebView's "device-
+    width" viewport came out 6144 CSS px wide for an actual 3840px-wide 4K panel (a
+    devicePixelRatio of 0.625 instead of 1). Passing that real width via the viewport <meta> tag
+    (width=3840 instead of device-width) had no effect - this WebView ignores an explicit
+    numeric viewport width and keeps using its own device-width calculation regardless. Setting
+    `zoom` on the root also didn't work the way a plain desktop Chromium would: it uniformly
+    magnified the whole page (breaking the timer digits, which were already correctly sized)
+    instead of making vw/vh recompute against a smaller effective viewport.
+    receiver.css's clamp() font-size ceilings were tuned assuming ~1 CSS px per device px, so on
+    the inflated viewport they get hit almost immediately and render far smaller on screen than
+    intended, while box sizes using plain min(vw, vh) with no fixed-px ceiling scale up
+    unaffected - exactly the "timer is fine, everything else is tiny" pattern seen on-device.
+    Every clamp() min/max bound in receiver.css is written as `calc(N * var(--px))` instead of a
+    literal `Npx` (see the --px comment there) specifically so this correction factor
+    (actual CSS viewport width / real physical width) can be applied ONLY to those fixed
+    ceilings - leaving vw-only sizes (the timer digits) untouched - without rewriting
+    receiver.css's actual layout. Falls back to a no-op (--px stays 1px) when loaded any other
+    way (e.g. opened directly for local testing), or when the device isn't affected by this bug.
+  -->
+  <script>
+    window.IRONWOD_PHYSICAL_WIDTH = parseInt('%%VIEWPORT_WIDTH%%', 10) || 0;
+    (function () {
+      var physicalWidth = window.IRONWOD_PHYSICAL_WIDTH;
+      if (!physicalWidth) return;
+      function applyPxCorrection() {
+        var factor = window.innerWidth / physicalWidth;
+        if (factor > 1.02 || factor < 0.98) {
+          document.documentElement.style.setProperty('--px', factor + 'px');
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyPxCorrection);
+      } else {
+        applyPxCorrection();
+      }
+    })();
+  </script>
   <!-- Space Mono / Rajdhani are bundled locally via @font-face in receiver.css
        (fonts/) instead of Google Fonts - see the comment there. -->
-  <link rel="stylesheet" href="receiver.css?v=20260904-11">
+  <link rel="stylesheet" href="receiver.css?v=486368ea14b8">
 </head>
 <body>
   <!--
     SOURCE LAYER
-    These are the exact DOM ids expected by receiver.js. receiver.js owns
-    them completely. The LED code NEVER writes here.
+    These are the exact DOM ids expected by the proven working receiver.js.
+    receiver.js owns them completely. The LED code NEVER writes here.
   -->
   <div id="receiverSource" class="receiver-source" aria-hidden="true">
     <div id="statusText">IRON WOD</div>
     <div id="timerText">00:00</div>
     <div id="timeCapText" class="hidden"></div>
     <div id="footerText">TIMER</div>
-    <!-- Only ever populated on the local HDMI Presentation build of this same
-         bundle (never sent over the real Cast Message Channel) - see
-         led-display.js. Stays empty here, which is the correct/expected
-         state for a real Cast session. -->
+    <!-- HDMI-only signal (never sent over the Cast Message Channel) distinguishing screens
+         that otherwise send an identical statusText/footerText shape - see led-display.js. -->
     <div id="screenKindText" class="hidden"></div>
   </div>
 
@@ -45,17 +83,21 @@
     <div id="ledFooter" class="footer">TIMER</div>
   </main>
 
-  <!-- CAF SDK must load BEFORE receiver.js, so window.cast.framework already
-       exists when receiver.js checks for it and wires up the Cast Message
-       Channel (IronCastProtocol.NAMESPACE in the app). This bundle is kept
-       byte-for-byte in sync with the IronWOD app's local HDMI Presentation
-       build (src/main/assets/cast_receiver/); the CAF script tag here is the
-       only intentional difference. -->
+  <!--
+    Local IronWOD HDMI bundle: no Cast SDK script here (no real Cast session
+    exists in this WebView). receiver.js detects that and skips the Cast
+    wiring, exposing window.ironWodReceiver.updateTimer/clearTimer instead,
+    which the Android Presentation drives directly via evaluateJavascript.
+  -->
+  <!-- Chromecast copy, written by scripts/sync_cast_receiver.py in the IronWOD app repo:
+       edit src/main/assets/cast_receiver there, never here. The Cast SDK must load
+       before receiver.js, which wires the Cast message channel when it finds it. -->
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
-  <script src="receiver.js?v=20260904-1"></script>
+  <script src="receiver-version.js?v=486368ea14b8"></script>
+  <script src="receiver.js?v=486368ea14b8"></script>
 
   <!-- Visual mirror only; it has no Cast namespace/listener/context code. -->
-  <script src="led-display.js?v=20260904-10"></script>
-  <script src="standby.js?v=20260830-12"></script>
+  <script src="led-display.js?v=486368ea14b8"></script>
+  <script src="standby.js?v=486368ea14b8"></script>
 </body>
 </html>

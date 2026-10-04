@@ -25,6 +25,7 @@
   let lastRoundAlertKey = '';
   let lastEmomRoundKey = '';
   let lastRestCueStatus = '';
+  let lastFinalCountdown = 0;
   const AUDIO_ASSET_VERSION = '20260827-voice-refresh1';
   const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
 
@@ -795,7 +796,37 @@
     }
   }
 
+  // Optional final countdown (app setting): the last 10 seconds before the timer ends, moves on
+  // to its next part or reaches its time cap - one tick per second, the number in VOICE mode.
+  function maybePlayFinalCountdownCue(seconds, audioMode, voiceLanguage) {
+    const previous = lastFinalCountdown;
+    lastFinalCountdown = seconds;
+    if (seconds <= 0 || seconds === previous) return;
+
+    const rawMode = String(audioMode || 'SOUNDS').trim().toUpperCase();
+    if (rawMode === 'SILENT') return;
+    if (rawMode === 'VOICE') {
+      if (!playVoiceAsset(String(seconds), voiceLanguage || 'it')) {
+        speakCue(String(seconds), voiceLanguage || 'it', true);
+      }
+    } else {
+      countdownCue();
+    }
+  }
+
+  // TV margin (app setting, HDMI and Chromecast only): some TVs cut the picture's edges
+  // (overscan), so the whole board shrinks around the centre by that percentage on every side.
+  // led-display.js reads IRONWOD_BOARD_SCALE to turn what it measures back into page units.
+  function applyTvMargin(percent) {
+    const margin = Math.max(0, Math.min(10, Number(percent) || 0));
+    const scale = 1 - (2 * margin) / 100;
+    window.IRONWOD_BOARD_SCALE = scale;
+    document.body.style.transformOrigin = '50% 50%';
+    document.body.style.transform = scale === 1 ? '' : 'scale(' + scale + ')';
+  }
+
   function updateTimer(data) {
+    applyTvMargin(data.tvMargin);
     const resolved = resolveStatusAndTimeCap(data);
     const statusText = compactCompletionStatus(resolved.statusText);
     const timerText = String(data.timerText || '');
@@ -824,6 +855,12 @@
       data.voiceLanguage || 'it'
     );
 
+    maybePlayFinalCountdownCue(
+      Number(data.finalCountdown) || 0,
+      data.audioMode || 'SOUNDS',
+      data.voiceLanguage || 'it'
+    );
+
     maybePlayEmomRoundCue(
       footerText,
       data.audioMode || 'SOUNDS',
@@ -831,7 +868,17 @@
     );
 
     statusEl.textContent = statusText;
+    // read by led-display.js: only the seconds stay lit, in their usual place
+    timerEl.classList.toggle('final-countdown', (Number(data.finalCountdown) || 0) > 0);
     timerEl.textContent = timerText;
+    // Board parts the app leaves out (Coach mode, Intervals' "hide last row"): flags on the
+    // footer source element, read by led-display.js - the text itself still classifies the mode.
+    const hiddenParts = String(data.hiddenParts || '').split(/\s+/);
+    ['footer', 'total', 'count'].forEach(part => {
+      footerEl.classList.toggle(`hide-${part}`, hiddenParts.includes(part));
+    });
+    // not a part: the Coach's board (bigger clock, same in every timer)
+    footerEl.classList.toggle('coach-board', hiddenParts.includes('coach'));
     renderFooter(footerText);
 
     timeCapEl.textContent = resolved.timeCapText;
@@ -853,6 +900,7 @@
     statusEl.textContent = 'IRON WOD';
     timerEl.textContent = '00:00';
     footerEl.textContent = 'TIMER';
+    footerEl.classList.remove('hide-footer', 'hide-total', 'hide-count', 'coach-board');
     timeCapEl.textContent = '';
     timeCapEl.classList.add('hidden');
     if (screenKindEl) screenKindEl.textContent = '';
@@ -867,6 +915,8 @@
     lastRoundAlertKey = '';
     lastEmomRoundKey = '';
     lastRestCueStatus = '';
+    lastFinalCountdown = 0;
+    timerEl.classList.remove('final-countdown');
   }
 
 
@@ -921,6 +971,21 @@
 
       if (data.type === 'clear') {
         clearTimer();
+      }
+
+      // The app asks which board this is (receiver-version.js, written in the Chromecast copy by
+      // scripts/sync_cast_receiver.py): it warns when the Chromecast runs an older board.
+      if (data.type === 'hello') {
+        const version = window.IRONWOD_RECEIVER_VERSION || {};
+        try {
+          context.sendCustomMessage(NAMESPACE, event.senderId, JSON.stringify({
+            type: 'receiverVersion',
+            hash: String(version.hash || ''),
+            code: Number(version.code) || 0
+          }));
+        } catch (error) {
+          console.warn('[IRON WOD protocol] unable to send the board version', error);
+        }
       }
     });
 

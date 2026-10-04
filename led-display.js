@@ -134,7 +134,7 @@
     wrapper.style.transform = 'scale(' + (maxWidth / width) + ')';
   }
 
-  function renderDigits(value) {
+  function renderDigits(value, finalCountdown = false) {
     const raw = String(value || '').trim();
     timer.textContent = '';
     timer.setAttribute('aria-label', raw);
@@ -147,16 +147,25 @@
       return;
     }
 
-    for (const ch of raw) {
+    // Final countdown: everything but the seconds goes dark (a leading 0 too), but keeps its
+    // room, so "10", "9", ... stay exactly where the seconds always are.
+    const lastLitIndex = raw.length - 1;
+    const firstLitIndex = finalCountdown
+      ? (raw.length >= 2 && raw[raw.length - 2] !== '0' ? raw.length - 2 : lastLitIndex)
+      : 0;
+
+    for (let index = 0; index < raw.length; index++) {
+      const ch = raw[index];
+      const unlit = index < firstLitIndex ? ' led-unlit' : '';
       if (ch === ':') {
         const colon = document.createElement('span');
-        colon.className = 'led-colon';
+        colon.className = 'led-colon' + unlit;
         timer.appendChild(colon);
         continue;
       }
 
       const digit = document.createElement('span');
-      digit.className = 'led-char';
+      digit.className = 'led-char' + unlit;
       const active = new Set(SEGMENTS[ch] || []);
 
       for (const part of ['a','b','c','d','e','f','g']) {
@@ -173,8 +182,29 @@
   // context via CSS (see ".interval-number .led-char" etc in receiver.css)
   // instead of a font - immune to any font/clamp()-related sizing quirk,
   // and to whatever was making these numbers flicker between two sizes.
+  // "ROUND" over "OF 10": the total as words under the red round number, the same
+  // caption language as AMRAP's "ROUND COMPLETATI" instead of a tiny second number.
+  function renderRoundCaption(container, total) {
+    let language = 'en';
+    try { language = localStorage.getItem('ironWodLastVoiceLanguage') || 'en'; } catch (_) {}
+    const of = language === 'it' ? 'SU' : language === 'es' ? 'DE' : 'OF';
+    renderCaptionLines(container, ['ROUND', `${of} ${total}`]);
+  }
+
+  function renderCaptionLines(container, lines) {
+    container.textContent = '';
+    container.removeAttribute('aria-label');
+    container.classList.add('is-caption');
+    lines.forEach(line => {
+      const lineEl = document.createElement('div');
+      lineEl.textContent = line;
+      container.appendChild(lineEl);
+    });
+  }
+
   function renderLedNumber(container, value) {
     const raw = String(value || '').trim();
+    container.classList.remove('is-caption');
     container.textContent = '';
     container.setAttribute('aria-label', raw);
 
@@ -418,6 +448,12 @@
     const totalTime = parseTotalTime(rawFooter);
     const emom = parseEmomFooter(rawFooter);
     const clean = cleanStatus(rawStatus);
+    // Parts the app asked to leave out (see receiver.js updateTimer).
+    const hideFooter = sourceFooter.classList.contains('hide-footer');
+    const hideTotal = sourceFooter.classList.contains('hide-total');
+    const hideCount = sourceFooter.classList.contains('hide-count');
+    // Coach profile: bigger clock digits, the same in every timer (receiver.css, coach-board).
+    const coachBoard = sourceFooter.classList.contains('coach-board');
 
     // Tabata / manual Intervals: bare WORK/REST status + plain "ROUND x / y"
     // footer, no INTERVALLO suffix (Structured Intervals) and no "EMOM ·"
@@ -489,7 +525,9 @@
     const state = visualState(rawStatus);
     screen.className = `timer-screen ${state}`;
     status.textContent = activeVisualMode === 'FORTIME' ? relabelForTimeStatus(clean) : clean;
-    renderDigits(timerText);
+    const finalCountdown = sourceTimer.classList.contains('final-countdown');
+    screen.classList.toggle('final-countdown', finalCountdown);
+    renderDigits(timerText, finalCountdown);
 
     // EMOM/Tabata/manual Intervals send their round footer from the very
     // start, including during the preparation countdown before round 1
@@ -507,7 +545,8 @@
         activeVisualMode === 'MANUAL_INTERVALS' || activeVisualMode === 'EMOM_STRUCTURED') &&
       round && state !== 'state-prep';
     const forTimeActive = activeVisualMode === 'FORTIME' && state !== 'state-prep';
-    const amrapActive = activeVisualMode === 'AMRAP' && state !== 'state-prep';
+    // Without its rounds count (Coach mode) AMRAP is just a clock: drawn like Countdown.
+    const amrapActive = activeVisualMode === 'AMRAP' && state !== 'state-prep' && !hideCount;
     // PLAIN's clock color/alignment rules use !important (needed to beat the
     // generic family rules), which also beats the base orange-during-prep
     // rule. Standalone Countdown/Count Up never actually hit PLAIN during
@@ -517,7 +556,9 @@
     // footer from the very start, including during prep. Gate it exactly
     // like every other mode so prep always falls through to the shared
     // centered/orange treatment.
-    const plainActive = activeVisualMode === 'PLAIN' && state !== 'state-prep';
+    const plainActive =
+      (activeVisualMode === 'PLAIN' || (activeVisualMode === 'AMRAP' && hideCount)) &&
+      state !== 'state-prep';
     // Every other mode's own render branch is gated on state !== 'state-prep', so
     // during the countdown its right-aligned clock never applies and it falls
     // through to the shared centered/orange treatment below - this one was
@@ -586,7 +627,7 @@
 
       // Big red current ROUND number on the left, smaller total rounds below it.
       renderLedNumber(intervalNumber, emom.current);
-      renderLedNumber(intervalTotal, emom.total);
+      renderRoundCaption(intervalTotal, emom.total);
       intervalBadge.classList.remove('hidden');
       intervalTotal.classList.remove('hidden');
 
@@ -624,7 +665,7 @@
       } else {
         // Tabata / manual Intervals: same left-badge language as EMOM.
         renderLedNumber(intervalNumber, round.current);
-        renderLedNumber(intervalTotal, round.total);
+        renderRoundCaption(intervalTotal, round.total);
       }
       intervalBadge.classList.remove('hidden');
       intervalTotal.classList.remove('hidden');
@@ -647,12 +688,7 @@
         ? parseStructuredAmrapRoundCount(rawFooter)
         : parseAmrapRoundCount(rawFooter);
       renderLedNumber(intervalNumber, amrapRound.count);
-      intervalTotal.textContent = '';
-      amrapRound.labelLines.forEach(line => {
-        const lineEl = document.createElement('div');
-        lineEl.textContent = line;
-        intervalTotal.appendChild(lineEl);
-      });
+      renderCaptionLines(intervalTotal, amrapRound.labelLines);
       intervalBadge.classList.remove('hidden');
       intervalTotal.classList.remove('hidden');
 
@@ -676,7 +712,7 @@
       topCounter.textContent = '';
       topCounter.classList.add('hidden');
 
-      const sourceFooterText = stripPlainModeLabel(rawFooter);
+      const sourceFooterText = activeVisualMode === 'AMRAP' ? '' : stripPlainModeLabel(rawFooter);
       footer.textContent = sourceFooterText;
       footer.className = 'footer plain-footer';
       footer.classList.toggle('hidden', !sourceFooterText);
@@ -771,6 +807,44 @@
       footer.classList.toggle('hidden', !sourceFooterText);
     }
 
+    // The red number is drawn alone, as big as the clock's digits and on their line (see
+    // alignCoachNumber, run once the clock has its final size); what used to sit under it
+    // ("ROUND OF 10", "ROUNDS COMPLETED") moves to the bottom row, like Intervals' "ROUND ·
+    // INTERVALS" - and goes with it when the app hides that row (Coach mode, "hide last row").
+    // A multi-part WOD's block keeps its own bottom row, which already carries the rounds.
+    const numberAlone = !intervalBadge.classList.contains('hidden') &&
+      intervalNumber.querySelector('.led-char') !== null &&
+      (activeVisualMode === 'EMOM' || activeVisualMode === 'EMOM_STRUCTURED' ||
+        activeVisualMode === 'TABATA' || activeVisualMode === 'MANUAL_INTERVALS' ||
+        activeVisualMode === 'INTERVALS' || activeVisualMode === 'AMRAP' ||
+        activeVisualMode === 'FORTIME');
+    if (numberAlone) {
+      const caption = !intervalTotal.classList.contains('hidden') && intervalTotal.classList.contains('is-caption')
+        ? Array.from(intervalTotal.children).map(line => line.textContent.trim()).filter(Boolean).join(' ')
+        : '';
+      intervalTotal.classList.add('hidden');
+      const multiPart = String(rawFooter || '').includes('•');
+      const ownFooter = footer.classList.contains('hidden') ? '' : String(footer.textContent || '').trim();
+      if (multiPart && !ownFooter) {
+        // the block's own row ("ROUND 3/10 · EMOM · INTERVALLO 1/3"), which some block layouts
+        // leave out: the number's caption alone would lose it
+        footer.textContent = String(rawFooter).trim().split(/\s*•\s*/).join(' · ');
+        footer.className = 'footer number-caption-footer';
+      } else if (caption && !multiPart && !hideTotal && !hideCount) {
+        footer.textContent = ownFooter && ownFooter !== caption ? caption + ' · ' + ownFooter : caption;
+        // the counter's own caption: left-aligned under the red number (alignCoachNumber)
+        footer.className = 'footer number-caption-footer number-caption-left';
+      }
+    } else if (hideTotal) {
+      intervalTotal.classList.add('hidden');
+    }
+    screen.classList.toggle('coach-number', numberAlone);
+    screen.classList.toggle('coach-board', coachBoard);
+    if (hideFooter) {
+      footer.textContent = '';
+      footer.className = 'footer hidden';
+    }
+
     // For Time (forTimeActive) already folds capText into its own footer line above -
     // the separate .time-cap overlay would otherwise show the same text a second
     // time, positioned independently enough to collide with the clock or footer.
@@ -778,6 +852,77 @@
     timeCap.classList.toggle('hidden', !String(capText).trim() || forTimeActive);
 
     fitOverflowingTextToBounds();
+    alignCoachNumber(numberAlone);
+  }
+
+  // The red number grows from the clock's own digits, measured as drawn: alone (Coach mode) it
+  // takes their size and sits centred on their line; with its caption underneath (ROUND OF 8,
+  // ROUNDS...) number + caption fill the digits' height, the number's top on the digits' top.
+  // A number too wide for its column (two digits) shrinks to fit it, clear of the clock. Inline
+  // sizes, so none of the per-mode badge rules above apply.
+  function alignCoachNumber(active) {
+    footer.style.removeProperty('left');
+    intervalNumber.style.removeProperty('transform');
+    intervalNumber.style.removeProperty('gap');
+    intervalTotal.style.removeProperty('transform');
+    const numberChars = Array.from(intervalNumber.querySelectorAll('.led-char'));
+    numberChars.forEach(ch => {
+      ch.style.removeProperty('width');
+      ch.style.removeProperty('height');
+    });
+    const firstClockEl = timer.querySelector('.led-char, .led-colon');
+    const digitEl = timer.querySelector('.led-char:not(.led-unlit)') || timer.querySelector('.led-char');
+    if (!numberChars.length || !firstClockEl || !digitEl || intervalBadge.classList.contains('hidden')) return;
+
+    const digit = digitEl.getBoundingClientRect();
+    if (digit.width <= 0 || digit.height <= 0) return;
+    // what is measured is drawn at the TV margin's scale (receiver.js applyTvMargin): lengths set
+    // back on the page are divided by it
+    const scale = window.IRONWOD_BOARD_SCALE || 1;
+    const centreX = window.innerWidth / 2;
+    const badge = intervalBadge.getBoundingClientRect();
+    const clockLeft = firstClockEl.getBoundingClientRect().left;
+    const centre = badge.left + badge.width / 2;
+    const margin = window.innerWidth * 0.05;
+    const column = Math.max(0, 2 * Math.min(clockLeft - margin - centre, centre - Math.max(0, badge.left)));
+    if (column <= 0) return;
+
+    const hasCaption = !active && !intervalTotal.classList.contains('hidden') &&
+      intervalTotal.getBoundingClientRect().height > 0;
+    const captionHeight = hasCaption ? intervalTotal.getBoundingClientRect().height : 0;
+    const captionGap = hasCaption ? digit.height * 0.05 : 0;
+    const height = Math.max(digit.height * 0.5, digit.height - captionHeight - captionGap);
+    const width = height * digit.width / digit.height;
+    const gap = width * 0.12;
+    const needed = numberChars.length * width + (numberChars.length - 1) * gap;
+    const fit = needed > column ? column / needed : 1;
+
+    numberChars.forEach(ch => {
+      ch.style.setProperty('width', (width * fit / scale) + 'px', 'important');
+      ch.style.setProperty('height', (height * fit / scale) + 'px', 'important');
+    });
+    intervalNumber.style.setProperty('gap', (gap * fit / scale) + 'px', 'important');
+
+    let number = numberChars[0].getBoundingClientRect();
+    const shift = active || !hasCaption
+      ? (digit.top + digit.height / 2) - (number.top + number.height / 2)
+      : digit.top - number.top;
+    intervalNumber.style.setProperty('transform', 'translateY(' + (shift / scale) + 'px)', 'important');
+    if (footer.classList.contains('number-caption-left')) {
+      // where the number visibly starts: its leftmost lit segment, not the digit's wider box
+      const lit = Array.from(intervalNumber.querySelectorAll('.led-seg.on'))
+        .map(seg => seg.getBoundingClientRect())
+        .filter(rect => rect.width > 0);
+      const left = lit.length ? Math.min(...lit.map(rect => rect.left)) : numberChars[0].getBoundingClientRect().left;
+      footer.style.setProperty('left', (centreX + (left - centreX) / scale) + 'px', 'important');
+    }
+    if (!hasCaption) return;
+
+    // the caption right under the number
+    number = numberChars[0].getBoundingClientRect();
+    const caption = intervalTotal.getBoundingClientRect();
+    const captionShift = number.bottom + captionGap - caption.top;
+    intervalTotal.style.setProperty('transform', 'translateY(' + (captionShift / scale) + 'px)', 'important');
   }
 
   // Single overflow guard for every mode instead of one bespoke fitTextToWidth
@@ -801,17 +946,31 @@
       fitTextToWidth(el, el.getBoundingClientRect().width);
     });
 
-    if (intervalTotal && !intervalTotal.classList.contains('hidden')) {
+    if (intervalTotal && !intervalTotal.classList.contains('hidden') &&
+        intervalTotal.classList.contains('is-caption')) {
+      // One scale for every caption line: fitting each line on its own made the
+      // longer word ("COMPLETATI") come out smaller than the one above it.
       const budget = intervalTotal.getBoundingClientRect().width;
-      Array.from(intervalTotal.children).forEach(lineEl => {
-        if (lineEl.textContent && lineEl.textContent.trim()) {
-          // Left-anchored: these lines are left-aligned against the badge's
-          // own left edge (receiver.css), which is itself flush against the
-          // screen edge - shrinking from the left would reopen the original
-          // off-screen clip this was fixed for.
-          fitTextToWidth(lineEl, budget, 'left');
+      const wrappers = Array.from(intervalTotal.children)
+        .filter(lineEl => lineEl.textContent && lineEl.textContent.trim())
+        .map(lineEl => {
+          const wrapper = document.createElement('span');
+          wrapper.style.display = 'inline-block';
+          while (lineEl.firstChild) wrapper.appendChild(lineEl.firstChild);
+          lineEl.appendChild(wrapper);
+          return wrapper;
+        });
+      if (budget > 0 && wrappers.length) {
+        const widest = Math.max(...wrappers.map(measuredContentWidth));
+        if (widest > budget) {
+          // Left-anchored: the lines sit flush against the badge's left edge
+          // (receiver.css), and shrinking from the centre would push them off it.
+          wrappers.forEach(wrapper => {
+            wrapper.style.transformOrigin = 'left center';
+            wrapper.style.transform = 'scale(' + (budget / widest) + ')';
+          });
         }
-      });
+      }
     }
   }
 
