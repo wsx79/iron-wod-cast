@@ -716,22 +716,6 @@
       footer.textContent = sourceFooterText;
       footer.className = 'footer plain-footer';
       footer.classList.toggle('hidden', !sourceFooterText);
-    } else if (activeVisualMode === 'FORTIME' && forTimeInterval && state === 'state-prep') {
-      // The 3-2-1 countdown falls through to the shared generic/plain digit
-      // treatment for every mode (see the *Active gates above, all excluding
-      // state-prep) - fine for a plain full-width clock, but this block's
-      // clock is narrower once has-fortime-badge applies (room for the red
-      // badge next to it), so without this the countdown briefly renders at
-      // the wider plain size and visibly jumps smaller the instant WORK
-      // starts and the badge appears. Apply the same clock sizing early, with
-      // no badge content yet (nothing meaningful to show during the count).
-      screen.classList.add('has-fortime', 'has-fortime-badge');
-      intervalBadge.classList.add('hidden');
-      intervalTotal.classList.add('hidden');
-      topCounter.textContent = '';
-      topCounter.classList.add('hidden');
-      footer.textContent = '';
-      footer.className = 'footer hidden';
     } else if (forTimeActive) {
       screen.classList.add('has-fortime');
 

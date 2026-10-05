@@ -200,12 +200,96 @@
     }
   }
 
+  // Chromecast only: the beeps are 0.12-0.32s long and the Chromecast's audio output opens a few
+  // hundred milliseconds late after a quiet spell, cutting the start of whatever plays - a voice
+  // cue (0.6-1s) loses its first syllable and is still heard, a beep is swallowed whole (the
+  // rest/EMOM/countdown beeps were silent while the voices worked). So on the Chromecast one
+  // WebAudio graph runs for the whole session, never letting the output close, and the beeps are
+  // decoded once and played on it: no new stream to open, nothing cut. The HDMI board (the
+  // phone's own WebView) keeps the plain <audio> path - a stream running there all the time
+  // would only cost battery on the phone.
+  const IS_CAST_RECEIVER = !!(window.cast && window.cast.framework);
+  const soundBuffers = {};
+  let warmOutputStarted = false;
+
+  function startWarmOutput(ctx) {
+    if (warmOutputStarted) return;
+    try {
+      // -70 dB at 30 Hz: nothing anyone hears, but never digital silence either, which some
+      // TVs and soundbars treat as "no audio" and switch their own input off.
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 30;
+      gain.gain.value = 0.0003;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      warmOutputStarted = true;
+    } catch (error) {
+      console.warn('[IRON WOD audio] warm output failed:', error);
+    }
+  }
+
+  function loadSoundBuffers(ctx) {
+    ['countdown', 'work', 'rest', 'complete'].forEach(name => {
+      if (soundBuffers[name]) return;
+      fetch(soundUrl(name))
+        .then(response => response.arrayBuffer())
+        .then(data => new Promise((resolve, reject) => ctx.decodeAudioData(data, resolve, reject)))
+        .then(buffer => { soundBuffers[name] = buffer; })
+        .catch(error => console.warn('[IRON WOD audio] sound decode failed:', name, error));
+    });
+  }
+
+  function prepareCastAudio() {
+    if (!IS_CAST_RECEIVER) return;
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const ready = () => {
+      startWarmOutput(ctx);
+      loadSoundBuffers(ctx);
+    };
+    if (ctx.state === 'running') {
+      ready();
+    } else {
+      ctx.resume().then(ready).catch(error => {
+        console.warn('[IRON WOD audio] cast AudioContext.resume() rejected:', error);
+      });
+    }
+  }
+
+  let currentBufferSource = null;
+
+  function playSoundBuffer(name) {
+    if (!IS_CAST_RECEIVER || !audioContext || audioContext.state !== 'running') return false;
+    const buffer = soundBuffers[name];
+    if (!buffer) return false;
+    try {
+      if (currentBufferSource) {
+        try { currentBufferSource.stop(); } catch (_) {}
+      }
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioContext.destination);
+      source.start();
+      currentBufferSource = source;
+      return true;
+    } catch (error) {
+      console.warn('[IRON WOD audio] buffer playback failed:', name, error);
+      return false;
+    }
+  }
+
   function playSoundAsset(name) {
     lastRealCueAtMs = Date.now();
     const url = soundUrl(name);
 
     try {
       stopSoundAudio();
+      if (playSoundBuffer(name)) return true;
+      // Not ready yet (first seconds of the session) or not a Chromecast: try again for the
+      // next cue, play this one the old way.
+      prepareCastAudio();
       const requestId = soundRequestId;
 
       const player = new Audio(url);
@@ -371,6 +455,7 @@
 
   function audioKeepAliveTick() {
     if (lastAudioMode === 'SILENT') return;
+    if (warmOutputStarted && audioContext && audioContext.state === 'running') return;
     if (Date.now() - lastRealCueAtMs < 2500) return;
     try {
       const ping = new Audio(soundUrl('silence'));
@@ -921,6 +1006,7 @@
 
 
   primeAudioPipeline();
+  prepareCastAudio();
   startAudioKeepAlive();
 
   // Direct entry point for a host WebView (IronWOD's own HDMI Presentation)
