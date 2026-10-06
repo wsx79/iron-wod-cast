@@ -147,8 +147,8 @@
       return;
     }
 
-    // Final countdown: everything but the seconds goes dark (a leading 0 too), but keeps its
-    // room, so "10", "9", ... stay exactly where the seconds always are.
+    // Final countdown: everything but the seconds goes dark (a leading 0 too) and leaves the
+    // board (receiver.css), so "10", "9", ... are drawn alone in the middle of the clock's room.
     const lastLitIndex = raw.length - 1;
     const firstLitIndex = finalCountdown
       ? (raw.length >= 2 && raw[raw.length - 2] !== '0' ? raw.length - 2 : lastLitIndex)
@@ -824,6 +824,8 @@
     }
     screen.classList.toggle('coach-number', numberAlone);
     screen.classList.toggle('coach-board', coachBoard);
+    // Without the red number nothing sits on the left: the clock goes to the middle of the screen.
+    screen.classList.toggle('no-number', intervalBadge.classList.contains('hidden'));
     if (hideFooter) {
       footer.textContent = '';
       footer.className = 'footer hidden';
@@ -854,7 +856,7 @@
       ch.style.removeProperty('width');
       ch.style.removeProperty('height');
     });
-    const firstClockEl = timer.querySelector('.led-char, .led-colon');
+    const firstClockEl = timer.querySelector('.led-char:not(.led-unlit), .led-colon:not(.led-unlit)');
     const digitEl = timer.querySelector('.led-char:not(.led-unlit)') || timer.querySelector('.led-char');
     if (!numberChars.length || !firstClockEl || !digitEl || intervalBadge.classList.contains('hidden')) return;
 

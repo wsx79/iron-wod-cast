@@ -2230,10 +2230,14 @@ html, body {
 }
 
 
-/* Final countdown (optional, app setting): minutes and colon go dark but keep their room, so
-   only the seconds stay lit, where they always are. */
+/* Final countdown (optional, app setting): minutes and colon leave the board and the seconds
+   alone stand in the middle of the clock's room (beside the red number when there is one). */
 .timer .led-unlit {
-  visibility: hidden !important;
+  display: none !important;
+}
+
+.timer-screen.timer-screen.timer-screen.timer-screen.timer-screen.timer-screen.final-countdown .timer {
+  justify-content: center !important;
 }
 
 /* Over the time cap (For Time keeps running): the clock turns red with its OTC label, in every
@@ -2322,4 +2326,13 @@ html, body {
 
 .timer-screen.timer-screen.timer-screen.timer-screen.timer-screen .footer:not(.phase-footer) * {
   font-size: 1em !important;
+}
+
+
+/* No red number on the left (Countdown, For Time without its badge, Rest, a plain block...):
+   the clock is centred on the screen instead of hugging the right edge with a gap on the left. */
+.timer-screen.timer-screen.timer-screen.timer-screen.timer-screen.timer-screen.no-number .timer {
+  left: 1.5vw !important;
+  right: 1.5vw !important;
+  justify-content: center !important;
 }

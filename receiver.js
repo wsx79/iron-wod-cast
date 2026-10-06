@@ -26,8 +26,9 @@
   let lastEmomRoundKey = '';
   let lastRestCueStatus = '';
   let lastFinalCountdown = 0;
+  let lastTapCue = null;
   const AUDIO_ASSET_VERSION = '20260827-voice-refresh1';
-  const SOUND_ASSET_VERSION = '20260821-htmlaudio-beeps1';
+  const SOUND_ASSET_VERSION = '20261006-gym-clock-beeps';
 
   function normalizeLanguage(language) {
     const raw = String(language || '').trim().toLowerCase();
@@ -71,7 +72,7 @@
   }
 
   function prewarmAudioAssets() {
-    ['countdown', 'work', 'rest', 'complete'].forEach(name => {
+    ['countdown', 'work', 'rest', 'complete', 'tap'].forEach(name => {
       prefetchAsset(soundUrl(name));
     });
 
@@ -231,7 +232,7 @@
   }
 
   function loadSoundBuffers(ctx) {
-    ['countdown', 'work', 'rest', 'complete'].forEach(name => {
+    ['countdown', 'work', 'rest', 'complete', 'tap'].forEach(name => {
       if (soundBuffers[name]) return;
       fetch(soundUrl(name))
         .then(response => response.arrayBuffer())
@@ -336,13 +337,13 @@
     return audioContext;
   }
 
-  function scheduleTone(ctx, frequency, durationMs, gainValue, delayMs = 0) {
+  function scheduleTone(ctx, frequency, durationMs, gainValue, delayMs = 0, type = 'square') {
     const startAt = ctx.currentTime + delayMs / 1000;
     const endAt = startAt + durationMs / 1000;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    osc.type = 'sine';
+    osc.type = type;
     osc.frequency.setValueAtTime(frequency, startAt);
     gain.gain.setValueAtTime(0.0001, startAt);
     gain.gain.exponentialRampToValueAtTime(gainValue, startAt + 0.015);
@@ -353,7 +354,7 @@
     osc.stop(endAt + 0.02);
   }
 
-  function tone(frequency, durationMs, gainValue, delayMs = 0) {
+  function tone(frequency, durationMs, gainValue, delayMs = 0, type = 'square') {
     const ctx = ensureAudio();
     if (!ctx) {
       console.warn('[IRON WOD audio] WebAudio unavailable');
@@ -363,7 +364,7 @@
     if (ctx.state === 'suspended') {
       ctx.resume()
         .then(() => {
-          scheduleTone(ctx, frequency, durationMs, gainValue, delayMs);
+          scheduleTone(ctx, frequency, durationMs, gainValue, delayMs, type);
         })
         .catch(error => {
           console.warn('[IRON WOD audio] AudioContext.resume() rejected:', error);
@@ -372,7 +373,7 @@
     }
 
     try {
-      scheduleTone(ctx, frequency, durationMs, gainValue, delayMs);
+      scheduleTone(ctx, frequency, durationMs, gainValue, delayMs, type);
       return true;
     } catch (error) {
       console.warn('[IRON WOD audio] WebAudio tone failed:', error);
@@ -383,25 +384,30 @@
   function playToneFallback(name) {
     const cue = String(name);
 
+    // The same gym-clock set as the mp3s (scripts/generate_timer_sounds.py), roughly.
     if (cue === 'countdown') {
-      tone(920, 120, 0.34);
+      tone(880, 200, 0.2);
+      return;
+    }
+
+    if (cue === 'tap') {
+      tone(1760, 70, 0.15);
       return;
     }
 
     if (cue === 'rest') {
-      tone(650, 190, 0.34);
+      tone(880, 180, 0.2);
+      tone(880, 180, 0.2, 270);
       return;
     }
 
     if (cue === 'complete') {
-      tone(880, 150, 0.34);
-      tone(1120, 170, 0.36, 165);
-      tone(1420, 240, 0.38, 350);
+      tone(415, 1400, 0.22, 0, 'sawtooth');
+      tone(421, 1400, 0.22, 0, 'sawtooth');
       return;
     }
 
-    tone(1180, 140, 0.36);
-    tone(1480, 150, 0.34, 150);
+    tone(1320, 800, 0.2);
   }
 
   function primeAudioPipeline() {
@@ -881,7 +887,7 @@
     }
   }
 
-  // Optional final countdown (app setting): the last 10 seconds before the timer ends, moves on
+  // Optional final countdown (app setting): the last 10 or 5 seconds before the timer ends, moves on
   // to its next part or reaches its time cap - one tick per second, the number in VOICE mode.
   function maybePlayFinalCountdownCue(seconds, audioMode, voiceLanguage) {
     const previous = lastFinalCountdown;
@@ -896,6 +902,39 @@
       }
     } else {
       countdownCue();
+    }
+  }
+
+  // A timer button's beep (pause, resume, +1/-1 round - optional app setting): the app counts
+  // the taps, the board beeps when the count goes up. A beep in VOICE mode too.
+  function maybePlayTapCue(tapCue, audioMode) {
+    const previous = lastTapCue;
+    lastTapCue = tapCue;
+    if (previous === null || tapCue <= previous) return;
+    if (String(audioMode || 'SOUNDS').trim().toUpperCase() === 'SILENT') return;
+    playOverlaySound('tap');
+  }
+
+  // A sound over whatever is playing, which it never stops (playSoundAsset does): a button's
+  // beep must not cut a round's long beep or the end buzzer short.
+  function playOverlaySound(name) {
+    lastRealCueAtMs = Date.now();
+    try {
+      const buffer = soundBuffers[name];
+      if (IS_CAST_RECEIVER && audioContext && audioContext.state === 'running' && buffer) {
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContext.destination);
+        source.start();
+        return;
+      }
+      const player = new Audio(soundUrl(name));
+      player.volume = 1.0;
+      const result = player.play();
+      if (result && typeof result.catch === 'function') result.catch(() => playToneFallback(name));
+    } catch (error) {
+      console.warn('[IRON WOD audio] overlay sound failed:', name, error);
+      playToneFallback(name);
     }
   }
 
@@ -925,6 +964,8 @@
     } catch (_) {}
 
     const previousStatusText = lastStatus;
+
+    maybePlayTapCue(Number(data.tapCue) || 0, data.audioMode || 'SOUNDS');
 
     maybePlayCue(
       statusText,
@@ -1001,6 +1042,7 @@
     lastEmomRoundKey = '';
     lastRestCueStatus = '';
     lastFinalCountdown = 0;
+    lastTapCue = null;
     timerEl.classList.remove('final-countdown');
   }
 
