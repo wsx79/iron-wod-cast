@@ -866,11 +866,17 @@
     // back on the page are divided by it
     const scale = window.IRONWOD_BOARD_SCALE || 1;
     const centreX = window.innerWidth / 2;
-    const badge = intervalBadge.getBoundingClientRect();
-    const clockLeft = firstClockEl.getBoundingClientRect().left;
-    const centre = badge.left + badge.width / 2;
-    const margin = window.innerWidth * 0.05;
-    const column = Math.max(0, 2 * Math.min(clockLeft - margin - centre, centre - Math.max(0, badge.left)));
+    // where the clock visibly starts: its leftmost lit segment, not the first digit's wider box
+    const clockLit = Array.from(timer.querySelectorAll('.led-seg.on'))
+      .map(seg => seg.getBoundingClientRect())
+      .filter(rect => rect.width > 0);
+    const clockLeft = clockLit.length ? Math.min(...clockLit.map(rect => rect.left)) : firstClockEl.getBoundingClientRect().left;
+    // The free room left of the clock, from the board's left edge (inside the TV margin) to the
+    // clock: the number sits in its middle, the same distance from the edge and from the clock.
+    const roomLeft = centreX - centreX * scale;
+    const centre = (roomLeft + clockLeft) / 2;
+    const margin = window.innerWidth * 0.025 * scale;
+    const column = Math.max(0, clockLeft - roomLeft - 2 * margin);
     if (column <= 0) return;
 
     const hasCaption = !active && !intervalTotal.classList.contains('hidden') &&
@@ -893,13 +899,26 @@
     const shift = active || !hasCaption
       ? (digit.top + digit.height / 2) - (number.top + number.height / 2)
       : digit.top - number.top;
-    intervalNumber.style.setProperty('transform', 'translateY(' + (shift / scale) + 'px)', 'important');
+    // Centred on what is visibly drawn - its lit segments, not the digits' wider boxes (a 1 is
+    // lit only on its right side).
+    const litRects = () => Array.from(intervalNumber.querySelectorAll('.led-seg.on'))
+      .map(seg => seg.getBoundingClientRect())
+      .filter(rect => rect.width > 0);
+    let lit = litRects();
+    const drawnLeft = lit.length ? Math.min(...lit.map(rect => rect.left)) : number.left;
+    const drawnRight = lit.length ? Math.max(...lit.map(rect => rect.right)) : numberChars[numberChars.length - 1].getBoundingClientRect().right;
+    const shiftX = centre - (drawnLeft + drawnRight) / 2;
+    intervalNumber.style.setProperty('transform', 'translate(' + (shiftX / scale) + 'px, ' + (shift / scale) + 'px)', 'important');
     if (footer.classList.contains('number-caption-left')) {
-      // where the number visibly starts: its leftmost lit segment, not the digit's wider box
-      const lit = Array.from(intervalNumber.querySelectorAll('.led-seg.on'))
-        .map(seg => seg.getBoundingClientRect())
-        .filter(rect => rect.width > 0);
-      const left = lit.length ? Math.min(...lit.map(rect => rect.left)) : numberChars[0].getBoundingClientRect().left;
+      // The caption centred under the number; one too wide for that moves right only as much
+      // as it takes to stay clear of the board's left edge.
+      lit = litRects();
+      const numberLeft = lit.length ? Math.min(...lit.map(rect => rect.left)) : numberChars[0].getBoundingClientRect().left;
+      const numberRight = lit.length ? Math.max(...lit.map(rect => rect.right)) : numberChars[numberChars.length - 1].getBoundingClientRect().right;
+      const text = footer.firstElementChild || footer;
+      const textWidth = text.getBoundingClientRect().width;
+      const centred = (numberLeft + numberRight) / 2 - textWidth / 2;
+      const left = Math.max(roomLeft + margin / 2, centred);
       footer.style.setProperty('left', (centreX + (left - centreX) / scale) + 'px', 'important');
     }
     if (!hasCaption) return;
