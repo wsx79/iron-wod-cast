@@ -2336,3 +2336,9 @@ html, body {
   right: 1.5vw !important;
   justify-content: center !important;
 }
+
+/* Heart rate on the right of the status row (led-display.js): red heart, white beats, whatever
+   the phase color; out of the flow so WORK/REST stays centered. */
+.status .hr-box { position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: .55em; }
+.status .hr-heart { color: #ff2b2b; text-shadow: none; }
+.status .hr-beats { color: #ffffff; text-shadow: none; }

@@ -525,6 +525,20 @@
     const state = visualState(rawStatus);
     screen.className = `timer-screen ${state}`;
     status.textContent = activeVisualMode === 'FORTIME' ? relabelForTimeStatus(clean) : clean;
+    // Heart rate on the right of the status row (the status stays centered): red heart, white beats.
+    const heartRate = sourceStatus.dataset.hr || '';
+    if (heartRate) {
+      const box = document.createElement('span');
+      box.className = 'hr-box';
+      const heart = document.createElement('span');
+      heart.className = 'hr-heart';
+      heart.textContent = '♥ ';
+      const beats = document.createElement('span');
+      beats.className = 'hr-beats';
+      beats.textContent = heartRate;
+      box.append(heart, beats);
+      status.append(box);
+    }
     const finalCountdown = sourceTimer.classList.contains('final-countdown');
     screen.classList.toggle('final-countdown', finalCountdown);
     renderDigits(timerText, finalCountdown);
@@ -1021,7 +1035,7 @@
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['class', 'style']
+      attributeFilter: ['class', 'style', 'data-hr']
     });
   });
 

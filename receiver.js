@@ -994,6 +994,8 @@
     );
 
     statusEl.textContent = statusText;
+    // athlete's heart rate ("142 Z3"), drawn next to the status by led-display.js
+    statusEl.dataset.hr = String(data.heartRate || '');
     // read by led-display.js: only the seconds stay lit, in their usual place
     timerEl.classList.toggle('final-countdown', (Number(data.finalCountdown) || 0) > 0);
     timerEl.textContent = timerText;
